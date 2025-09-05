@@ -1,0 +1,26 @@
+{
+  "name": "space_scrap",
+  "version": "1.0.0",
+  "description": "A simple 3D board game with ship controls",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "threejs",
+    "3d",
+    "board-game",
+    "webgl"
+  ],
+  "author": "Board Game Team",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.168.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

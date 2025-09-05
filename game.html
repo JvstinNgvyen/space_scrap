@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Board Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚢</text></svg>">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            z-index: 1000;
+        }
+        
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 100;
+            max-width: 300px;
+        }
+        
+        #controls h3 {
+            margin: 0 0 10px 0;
+            color: #4ECDC4;
+        }
+        
+        #controls div {
+            margin: 5px 0;
+        }
+        
+        .key {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Loading 3D Board Game...</div>
+    
+    <div id="controls">
+        <h3>Ship Controls</h3>
+        <div><span class="key">G</span> - Translate Mode</div>
+        <div><span class="key">R</span> - Rotate Mode</div>
+        <div><span class="key">S</span> - Scale Mode</div>
+        <div><span class="key">1</span> - Red Ship</div>
+        <div><span class="key">2</span> - Blue Ship</div>
+        <div><span class="key">ESC</span> - Detach Controls</div>
+        <div style="margin-top: 10px; color: #888; font-size: 12px;">
+            Click and drag the colored arrows to move ships
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
