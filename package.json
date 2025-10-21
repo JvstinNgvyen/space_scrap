@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node server.js",
-    "dev:multiplayer": "concurrently \"vite\" \"node server.js\""
+    "dev:multiplayer": "concurrently \"vite\" \"node server.js\"",
+    "start": "NODE_ENV=production node server.js"
   },
   "keywords": [
     "threejs",

@@ -9,11 +9,18 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
+
+// CORS configuration for production and development
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? [process.env.CLIENT_URL || '*'] // In production, use environment variable
+    : '*', // In development, allow all origins
+  methods: ["GET", "POST"],
+  credentials: true
+};
+
 const io = new Server(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
 
 const PORT = process.env.PORT || 3000;

@@ -147,10 +147,26 @@ npm run build
 
 The built files will be in the `dist/` directory.
 
-For production deployment, make sure to:
-1. Set `NODE_ENV=production`
-2. Update the server URL in `multiplayer-app.js` if needed
-3. Configure your server to serve the static files and run the Socket.IO server
+## 🚀 Deploying to Railway
+
+**Quick Deploy (5 minutes!):**
+
+1. Push your code to GitHub
+2. Go to [Railway.app](https://railway.app/)
+3. Click "Deploy from GitHub repo"
+4. Select this repository
+5. Railway automatically builds and deploys!
+
+**Get your live URL and play with friends worldwide!**
+
+📖 **[Read Full Deployment Guide →](./DEPLOYMENT.md)**
+
+The deployment guide includes:
+- Step-by-step instructions
+- Troubleshooting tips
+- Custom domain setup
+- Monitoring and logs
+- Scaling advice
 
 ## Development
 

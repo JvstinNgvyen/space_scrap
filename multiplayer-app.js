@@ -38,9 +38,11 @@ class MultiplayerApp {
       console.log('MultiplayerApp: NetworkManager created');
 
       // Connect to server
+      // In production, use the same origin (Railway serves both frontend and backend)
+      // In development, connect to separate backend server
       const serverUrl = window.location.hostname === 'localhost'
         ? 'http://localhost:3000'
-        : window.location.origin;
+        : window.location.origin; // Production: same domain
 
       console.log('MultiplayerApp: Connecting to server:', serverUrl);
       this.loadingDiv.textContent = `Connecting to ${serverUrl}...`;
