@@ -35,7 +35,9 @@ const DISCONNECTION_GRACE_PERIOD = 60000;
 // {
 //   id: string,
 //   players: [{ id, ship, nickname, connected, disconnectedAt }],
-//   gameState: { redShip: {}, blueShip: {} }
+//   gameState: { redShip: {}, blueShip: {} },
+//   currentTurn: 'red' | 'blue',
+//   turnNumber: number
 // }
 
 io.on('connection', (socket) => {
@@ -58,14 +60,18 @@ io.on('connection', (socket) => {
       gameState: {
         redShip: { position: null, rotation: null, scale: null },
         blueShip: { position: null, rotation: null, scale: null }
-      }
+      },
+      currentTurn: 'red', // Red player (creator) starts first
+      turnNumber: 1
     });
 
     socket.join(roomId);
     socket.emit('room-created', {
       roomId,
       playerShip: 'red',
-      nickname: nickname
+      nickname: nickname,
+      currentTurn: 'red',
+      turnNumber: 1
     });
 
     console.log(`Room created: ${roomId} by ${socket.id}`);
@@ -106,7 +112,9 @@ io.on('connection', (socket) => {
       playerShip,
       nickname: playerNickname,
       gameState: room.gameState,
-      players: room.players // Send all players including Player 1
+      players: room.players, // Send all players including Player 1
+      currentTurn: room.currentTurn,
+      turnNumber: room.turnNumber
     });
 
     // Notify the other player
@@ -124,6 +132,16 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
 
     if (!room) return;
+
+    // Validate it's the player's turn
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    // Only allow updates during the player's turn and for their own ship
+    if (room.currentTurn !== player.ship || ship !== player.ship) {
+      socket.emit('error', { message: 'Not your turn or invalid ship' });
+      return;
+    }
 
     // Update game state
     if (ship === 'red') {
@@ -149,6 +167,49 @@ io.on('connection', (socket) => {
   socket.on('ship-selection-change', (data) => {
     const { roomId, ship } = data;
     socket.to(roomId).emit('ship-selection-changed', { ship });
+  });
+
+  // Handle end turn
+  socket.on('end-turn', (data) => {
+    const { roomId } = data;
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) {
+      socket.emit('error', { message: 'Player not found' });
+      return;
+    }
+
+    // Check if both players are in the room
+    if (room.players.length < 2) {
+      socket.emit('error', { message: 'Waiting for opponent to join' });
+      console.log(`Room ${roomId}: Cannot end turn - only ${room.players.length} player(s) in room`);
+      return;
+    }
+
+    // Validate it's actually the player's turn
+    if (room.currentTurn !== player.ship) {
+      socket.emit('error', { message: 'Not your turn' });
+      return;
+    }
+
+    // Switch turn to the other player
+    room.currentTurn = room.currentTurn === 'red' ? 'blue' : 'red';
+    room.turnNumber += 1;
+
+    console.log(`Room ${roomId}: Turn changed to ${room.currentTurn} (Turn #${room.turnNumber})`);
+    console.log(`Room ${roomId}: Emitting to all ${room.players.length} players in room`);
+
+    // Notify all players in the room about the turn change
+    io.to(roomId).emit('turn-changed', {
+      currentTurn: room.currentTurn,
+      turnNumber: room.turnNumber
+    });
   });
 
   // Handle reconnection
@@ -182,7 +243,9 @@ io.on('connection', (socket) => {
       playerShip,
       nickname: player.nickname,
       gameState: room.gameState,
-      players: room.players
+      players: room.players,
+      currentTurn: room.currentTurn,
+      turnNumber: room.turnNumber
     });
 
     // Notify other players
@@ -260,7 +323,9 @@ io.on('connection', (socket) => {
     socket.emit('room-info', {
       roomId: room.id,
       players: room.players,
-      gameState: room.gameState
+      gameState: room.gameState,
+      currentTurn: room.currentTurn,
+      turnNumber: room.turnNumber
     });
   });
 });

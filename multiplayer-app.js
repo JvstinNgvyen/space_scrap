@@ -19,6 +19,7 @@ class MultiplayerApp {
     this.createRoomBtn = document.getElementById('create-room-btn');
     this.joinRoomBtn = document.getElementById('join-room-btn');
     this.leaveGameBtn = document.getElementById('leave-game-btn');
+    this.endTurnBtn = document.getElementById('end-turn-btn');
 
     // Modal
     this.leaveConfirmModal = document.getElementById('leave-confirm-modal');
@@ -131,6 +132,13 @@ class MultiplayerApp {
     this.roomCodeInput.addEventListener('input', (e) => {
       e.target.value = e.target.value.toUpperCase();
     });
+
+    // End Turn button
+    if (this.endTurnBtn) {
+      this.endTurnBtn.addEventListener('click', () => {
+        this.endTurn();
+      });
+    }
   }
 
   setupNetworkCallbacks() {
@@ -176,6 +184,14 @@ class MultiplayerApp {
 
       this.updatePlayerList();
       this.showStatus('Opponent joined! Starting game...', 'success');
+
+      // Update turn UI if game already started
+      if (this.isGameStarted) {
+        this.updateEndTurnButton();
+        const currentTurn = this.networkManager.getCurrentTurn();
+        const turnNumber = this.networkManager.getTurnNumber();
+        this.updateTurnUI({ currentTurn, turnNumber }, false); // Don't show notification when player joins
+      }
 
       // Start the game
       setTimeout(() => {
@@ -265,6 +281,19 @@ class MultiplayerApp {
         window.location.reload();
       }, 2000);
     });
+
+    // Turn changed - NOTE: This must be set up AFTER GameEngine.enableMultiplayer()
+    // to avoid being overwritten, OR we handle both UI and GameEngine updates here
+    this.networkManager.onTurnChanged((data) => {
+      console.log('MultiplayerApp: Turn changed event received:', data);
+      this.updateTurnUI(data, true); // Show notification on turn change
+
+      // Also update GameEngine controls if game is running
+      if (this.gameEngine && this.gameEngine.isMultiplayer) {
+        console.log('MultiplayerApp: Updating GameEngine for turn change');
+        this.gameEngine.handleTurnChanged(data);
+      }
+    });
   }
 
   showWaitingRoom(roomCode) {
@@ -325,6 +354,9 @@ class MultiplayerApp {
 
     // Setup event listeners
     this.setupGameEventListeners();
+
+    // Initialize turn UI
+    this.initializeTurnUI();
 
     // Start the game
     this.gameEngine.start();
@@ -428,6 +460,132 @@ class MultiplayerApp {
     if (statusDiv) {
       statusDiv.style.display = 'none';
     }
+  }
+
+  initializeTurnUI() {
+    const currentTurn = this.networkManager.getCurrentTurn();
+    const turnNumber = this.networkManager.getTurnNumber();
+    const isMyTurn = this.networkManager.isMyTurn();
+
+    console.log('Initializing turn UI:', { currentTurn, turnNumber, isMyTurn, playerCount: this.players.length });
+
+    this.updateTurnUI({ currentTurn, turnNumber }, false); // Don't show notification on init
+
+    // Update button state based on player count
+    this.updateEndTurnButton();
+  }
+
+  updateTurnUI(data, showNotification = true) {
+    const isMyTurn = this.networkManager.isMyTurn();
+    const turnStatusDiv = document.getElementById('turn-status');
+    const turnNumberSpan = document.getElementById('turn-number');
+
+    console.log('Updating turn UI:', {
+      currentTurn: data.currentTurn,
+      turnNumber: data.turnNumber,
+      isMyTurn,
+      playerCount: this.players.length,
+      playerShip: this.networkManager.getPlayerShip()
+    });
+
+    // Update turn number
+    if (turnNumberSpan) {
+      turnNumberSpan.textContent = data.turnNumber;
+    }
+
+    // Update turn status
+    if (turnStatusDiv) {
+      if (this.players.length < 2) {
+        turnStatusDiv.textContent = 'WAITING FOR OPPONENT';
+        turnStatusDiv.className = 'turn-status waiting';
+      } else if (isMyTurn) {
+        turnStatusDiv.textContent = 'YOUR TURN';
+        turnStatusDiv.className = 'turn-status active';
+      } else {
+        turnStatusDiv.textContent = "OPPONENT'S TURN";
+        turnStatusDiv.className = 'turn-status waiting';
+      }
+    }
+
+    // Update End Turn button
+    this.updateEndTurnButton();
+
+    // Show brief notification when turn changes (only if 2 players and not initial load)
+    if (this.players.length >= 2 && showNotification) {
+      this.showTurnChangeNotification(isMyTurn);
+    }
+  }
+
+  updateEndTurnButton() {
+    const endTurnBtn = document.getElementById('end-turn-btn');
+    const isMyTurn = this.networkManager.isMyTurn();
+
+    if (endTurnBtn) {
+      // Disable if not player's turn OR if waiting for opponent
+      endTurnBtn.disabled = !isMyTurn || this.players.length < 2;
+    }
+  }
+
+  showTurnChangeNotification(isMyTurn) {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('turn-notification');
+    if (!notification) {
+      notification = document.createElement('div');
+      notification.id = 'turn-notification';
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        padding: 2rem 3rem;
+        border-radius: 12px;
+        border: 3px solid ${isMyTurn ? '#22c55e' : '#ef4444'};
+        text-align: center;
+        z-index: 200;
+        font-size: 2rem;
+        font-weight: 700;
+        color: ${isMyTurn ? '#22c55e' : '#ef4444'};
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      `;
+      document.body.appendChild(notification);
+    }
+
+    notification.textContent = isMyTurn ? 'YOUR TURN!' : "OPPONENT'S TURN";
+    notification.style.borderColor = isMyTurn ? '#22c55e' : '#ef4444';
+    notification.style.color = isMyTurn ? '#22c55e' : '#ef4444';
+    notification.style.opacity = '1';
+
+    // Hide after 2 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+    }, 2000);
+  }
+
+  endTurn() {
+    console.log('EndTurn called. Current state:', {
+      isMyTurn: this.networkManager.isMyTurn(),
+      currentTurn: this.networkManager.getCurrentTurn(),
+      playerShip: this.networkManager.getPlayerShip(),
+      playerCount: this.players.length
+    });
+
+    if (!this.networkManager.isMyTurn()) {
+      console.log('Cannot end turn - not your turn');
+      return;
+    }
+
+    // Check if opponent is in the game
+    if (this.players.length < 2) {
+      this.showConnectionStatus('⚠️ Waiting for opponent to join before ending turn', 'warning');
+      setTimeout(() => this.hideConnectionStatus(), 3000);
+      return;
+    }
+
+    console.log('Sending end-turn event to server...');
+    this.networkManager.endTurn();
   }
 }
 

@@ -7,6 +7,8 @@ export class NetworkManager {
     this.roomId = null;
     this.playerShip = null; // 'red' or 'blue'
     this.nickname = null;
+    this.currentTurn = null; // 'red' or 'blue'
+    this.turnNumber = 0;
     this.callbacks = {
       onRoomCreated: null,
       onRoomJoined: null,
@@ -16,6 +18,7 @@ export class NetworkManager {
       onPlayerReconnected: null,
       onReconnected: null,
       onShipUpdated: null,
+      onTurnChanged: null,
       onError: null,
       onConnected: null,
       onDisconnected: null
@@ -75,6 +78,8 @@ export class NetworkManager {
       this.roomId = data.roomId;
       this.playerShip = data.playerShip;
       this.nickname = data.nickname;
+      this.currentTurn = data.currentTurn;
+      this.turnNumber = data.turnNumber;
 
       // Save session for reconnection
       this.saveSession();
@@ -90,6 +95,8 @@ export class NetworkManager {
       this.roomId = data.roomId;
       this.playerShip = data.playerShip;
       this.nickname = data.nickname;
+      this.currentTurn = data.currentTurn;
+      this.turnNumber = data.turnNumber;
 
       // Save session for reconnection
       this.saveSession();
@@ -141,6 +148,8 @@ export class NetworkManager {
       this.roomId = data.roomId;
       this.playerShip = data.playerShip;
       this.nickname = data.nickname;
+      this.currentTurn = data.currentTurn;
+      this.turnNumber = data.turnNumber;
 
       if (this.callbacks.onReconnected) {
         this.callbacks.onReconnected(data);
@@ -153,6 +162,17 @@ export class NetworkManager {
 
       if (this.callbacks.onShipUpdated) {
         this.callbacks.onShipUpdated(data);
+      }
+    });
+
+    // Turn changed event
+    this.socket.on('turn-changed', (data) => {
+      console.log('NetworkManager: Turn changed:', data);
+      this.currentTurn = data.currentTurn;
+      this.turnNumber = data.turnNumber;
+
+      if (this.callbacks.onTurnChanged) {
+        this.callbacks.onTurnChanged(data);
       }
     });
 
@@ -256,6 +276,18 @@ export class NetworkManager {
     });
   }
 
+  endTurn() {
+    if (!this.socket || !this.isConnected || !this.roomId) {
+      console.error('NetworkManager: Cannot end turn - not connected or not in room');
+      return;
+    }
+
+    console.log('NetworkManager: Ending turn');
+    this.socket.emit('end-turn', {
+      roomId: this.roomId
+    });
+  }
+
   getRoomInfo() {
     if (!this.socket || !this.isConnected || !this.roomId) {
       return;
@@ -321,6 +353,10 @@ export class NetworkManager {
     this.callbacks.onReconnected = callback;
   }
 
+  onTurnChanged(callback) {
+    this.callbacks.onTurnChanged = callback;
+  }
+
   // Getters
   getPlayerShip() {
     return this.playerShip;
@@ -336,6 +372,18 @@ export class NetworkManager {
 
   isInRoom() {
     return this.roomId !== null;
+  }
+
+  getCurrentTurn() {
+    return this.currentTurn;
+  }
+
+  getTurnNumber() {
+    return this.turnNumber;
+  }
+
+  isMyTurn() {
+    return this.currentTurn === this.playerShip;
   }
 
   // Session management for reconnection

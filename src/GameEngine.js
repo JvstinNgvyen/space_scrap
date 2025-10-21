@@ -28,6 +28,7 @@ export class GameEngine {
     this.networkManager = null;
     this.isMultiplayer = false;
     this.playerShip = null; // Which ship this player controls
+    this.isMyTurn = true; // Track if it's this player's turn (default true for single-player)
   }
 
   async init() {
@@ -550,6 +551,12 @@ export class GameEngine {
     this.transformControls.addEventListener("change", () => {
       console.log("Ship position changed:", this.currentShip.position);
 
+      // Only allow changes if it's the player's turn
+      if (this.isMultiplayer && !this.isMyTurn) {
+        console.log("Cannot modify ship - not your turn");
+        return;
+      }
+
       // Send ship update to network if in multiplayer mode
       if (this.isMultiplayer && this.networkManager && this.currentShip) {
         const shipType = this.currentShip === this.redShip ? 'red' : 'blue';
@@ -586,6 +593,12 @@ export class GameEngine {
 
   onTransformKeyDown(event) {
     if (!this.transformControls) return;
+
+    // In multiplayer mode, block transform mode changes if not player's turn
+    if (this.isMultiplayer && !this.isMyTurn && ['KeyG', 'KeyR', 'KeyS'].includes(event.code)) {
+      console.log("Cannot change transform mode - not your turn");
+      return;
+    }
 
     switch (event.code) {
       case "KeyG": // Translate mode
@@ -778,6 +791,7 @@ export class GameEngine {
     this.networkManager = networkManager;
     this.isMultiplayer = true;
     this.playerShip = playerShip;
+    this.isMyTurn = networkManager.isMyTurn();
 
     console.log(`Multiplayer enabled. You control the ${playerShip} ship.`);
 
@@ -786,19 +800,66 @@ export class GameEngine {
       this.applyRemoteShipUpdate(data.ship, data.transform);
     });
 
+    // NOTE: We don't set up onTurnChanged here because it would overwrite
+    // the MultiplayerApp's callback. Instead, MultiplayerApp will call
+    // handleTurnChanged() directly when it receives the event.
+
     // Auto-select the player's assigned ship
     if (playerShip === 'red') {
       this.switchToRedShip();
     } else if (playerShip === 'blue') {
       this.switchToBlueShip();
     }
+
+    // Update controls based on initial turn state
+    this.updateControlsForTurn();
   }
 
   disableMultiplayer() {
     this.networkManager = null;
     this.isMultiplayer = false;
     this.playerShip = null;
+    this.isMyTurn = true; // Reset to true for single-player
     console.log("Multiplayer disabled");
+  }
+
+  handleTurnChanged(data) {
+    const wasMyTurn = this.isMyTurn;
+    this.isMyTurn = this.networkManager.isMyTurn();
+
+    console.log(`GameEngine: Turn changed to ${data.currentTurn}. Was my turn: ${wasMyTurn}, Now my turn: ${this.isMyTurn}, My ship: ${this.playerShip}`);
+
+    this.updateControlsForTurn();
+  }
+
+  updateControlsForTurn() {
+    if (!this.transformControls) {
+      console.log('GameEngine: No transform controls to update');
+      return;
+    }
+
+    if (this.isMultiplayer) {
+      // Enable or disable transform controls based on turn
+      this.transformControls.enabled = this.isMyTurn;
+
+      // Visual feedback: make controls less visible when disabled
+      if (this.isMyTurn) {
+        this.transformControls.visible = true;
+      } else {
+        this.transformControls.visible = false;
+      }
+
+      console.log(`GameEngine: Transform controls ${this.isMyTurn ? 'enabled' : 'disabled'} for turn. Controls enabled=${this.transformControls.enabled}, visible=${this.transformControls.visible}`);
+    } else {
+      // Single-player: always enabled
+      this.transformControls.enabled = true;
+      this.transformControls.visible = true;
+    }
+  }
+
+  setTurnState(isMyTurn) {
+    this.isMyTurn = isMyTurn;
+    this.updateControlsForTurn();
   }
 
   sendShipUpdate(shipType) {
