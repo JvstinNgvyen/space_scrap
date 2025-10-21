@@ -282,10 +282,17 @@ class MultiplayerApp {
       }, 2000);
     });
 
-    // Turn changed
+    // Turn changed - NOTE: This must be set up AFTER GameEngine.enableMultiplayer()
+    // to avoid being overwritten, OR we handle both UI and GameEngine updates here
     this.networkManager.onTurnChanged((data) => {
       console.log('MultiplayerApp: Turn changed event received:', data);
       this.updateTurnUI(data, true); // Show notification on turn change
+
+      // Also update GameEngine controls if game is running
+      if (this.gameEngine && this.gameEngine.isMultiplayer) {
+        console.log('MultiplayerApp: Updating GameEngine for turn change');
+        this.gameEngine.handleTurnChanged(data);
+      }
     });
   }
 

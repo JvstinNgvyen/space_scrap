@@ -800,9 +800,9 @@ export class GameEngine {
       this.applyRemoteShipUpdate(data.ship, data.transform);
     });
 
-    this.networkManager.onTurnChanged((data) => {
-      this.handleTurnChanged(data);
-    });
+    // NOTE: We don't set up onTurnChanged here because it would overwrite
+    // the MultiplayerApp's callback. Instead, MultiplayerApp will call
+    // handleTurnChanged() directly when it receives the event.
 
     // Auto-select the player's assigned ship
     if (playerShip === 'red') {
