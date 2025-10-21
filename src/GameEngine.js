@@ -312,7 +312,7 @@ export class GameEngine {
       // Load board texture
       const textureLoader = new THREE.TextureLoader();
       const boardTexture = await textureLoader.loadAsync(
-        "./static/Game_Board_Default.png"
+        "/Game_Board_Default.png"
       );
 
       // Configure texture
