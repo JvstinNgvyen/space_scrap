@@ -177,6 +177,9 @@ class MultiplayerApp {
     this.networkManager.onReconnected((data) => {
       console.log('Reconnected to room:', data);
 
+      // Hide loading screen
+      this.loadingDiv.style.display = 'none';
+
       // Set players array from server data
       if (data.players) {
         this.players = data.players.map(p => ({
@@ -185,7 +188,9 @@ class MultiplayerApp {
         }));
       }
 
-      this.showStatus('Reconnected successfully!', 'success');
+      // Show lobby temporarily with success message
+      this.lobbyDiv.classList.remove('hidden');
+      this.showStatus('Reconnected successfully! Rejoining game...', 'success');
 
       // Start the game
       setTimeout(() => {
@@ -208,7 +213,21 @@ class MultiplayerApp {
     // Error
     this.networkManager.onError((data) => {
       console.error('Network error:', data);
-      this.showStatus(data.message || 'An error occurred', 'error');
+
+      // Hide loading if it's showing
+      this.loadingDiv.style.display = 'none';
+
+      // Show lobby if hidden
+      this.lobbyDiv.classList.remove('hidden');
+
+      // If reconnection failed, clear session
+      if (data.message && (data.message.includes('Room not found') || data.message.includes('expired'))) {
+        this.networkManager.clearSession();
+        this.showStatus('Could not reconnect: ' + data.message, 'error');
+      } else {
+        this.showStatus(data.message || 'An error occurred', 'error');
+      }
+
       this.createRoomBtn.disabled = false;
       this.joinRoomBtn.disabled = false;
     });
