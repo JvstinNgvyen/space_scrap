@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Scrap - Multiplayer</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚢</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0a0f;
+            --text-primary: #e6e6ff;
+            --text-secondary: #9090b3;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Space Mono', monospace;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        /* Canvas styles */
+        canvas.game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Loading screen */
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2rem;
+            border-radius: 8px;
+        }
+
+        /* Multiplayer lobby */
+        #multiplayer-lobby {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 10, 15, 0.95);
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 2rem;
+            z-index: 1000;
+            min-width: 400px;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+        }
+
+        #multiplayer-lobby.hidden {
+            display: none;
+        }
+
+        #multiplayer-lobby h2 {
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            text-align: center;
+            font-size: 1.8rem;
+            letter-spacing: 0.1em;
+        }
+
+        .lobby-section {
+            margin-bottom: 2rem;
+        }
+
+        .lobby-section h3 {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.05em;
+            text-transform: lowercase;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        #status-message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+        }
+
+        #status-message.info {
+            display: block;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid var(--accent-color);
+            color: var(--text-primary);
+        }
+
+        #status-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        #status-message.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #86efac;
+        }
+
+        #waiting-room {
+            display: none;
+            text-align: center;
+        }
+
+        #waiting-room.active {
+            display: block;
+        }
+
+        .room-code {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            letter-spacing: 0.2em;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 6px;
+        }
+
+        .player-list {
+            margin-top: 1.5rem;
+        }
+
+        .player-item {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-item.red {
+            border-left: 4px solid #ef4444;
+        }
+
+        .player-item.blue {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .ship-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .ship-badge.red {
+            background: #ef4444;
+            color: white;
+        }
+
+        .ship-badge.blue {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Game UI */
+        #game-ui {
+            display: none;
+        }
+
+        #game-ui.active {
+            display: block;
+        }
+
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 100;
+            max-width: 300px;
+        }
+
+        #controls h3 {
+            margin: 0 0 10px 0;
+            color: #4ECDC4;
+        }
+
+        #controls div {
+            margin: 5px 0;
+        }
+
+        .key {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        #player-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+            min-width: 200px;
+        }
+
+        #player-info h3 {
+            margin: 0 0 10px 0;
+            color: #4ECDC4;
+            font-size: 16px;
+        }
+
+        .info-item {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 0.75rem 1.5rem;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Connecting to server...</div>
+
+    <!-- Multiplayer Lobby -->
+    <div id="multiplayer-lobby" class="hidden">
+        <h2>Multiplayer Lobby</h2>
+
+        <div id="status-message"></div>
+
+        <div id="lobby-menu">
+            <div class="lobby-section">
+                <h3>Create New Game</h3>
+                <div class="input-group">
+                    <label for="create-nickname">Your Nickname</label>
+                    <input type="text" id="create-nickname" placeholder="Enter your nickname" maxlength="20" value="Player 1">
+                </div>
+                <button class="btn" id="create-room-btn">Create Room</button>
+            </div>
+
+            <div class="divider">- OR -</div>
+
+            <div class="lobby-section">
+                <h3>Join Existing Game</h3>
+                <div class="input-group">
+                    <label for="join-nickname">Your Nickname</label>
+                    <input type="text" id="join-nickname" placeholder="Enter your nickname" maxlength="20" value="Player 2">
+                </div>
+                <div class="input-group">
+                    <label for="room-code">Room Code</label>
+                    <input type="text" id="room-code" placeholder="Enter room code" maxlength="6">
+                </div>
+                <button class="btn" id="join-room-btn">Join Room</button>
+            </div>
+        </div>
+
+        <div id="waiting-room">
+            <h3>Waiting for Players</h3>
+            <div class="room-code" id="display-room-code"></div>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Share this code with your friend
+            </p>
+
+            <div class="player-list">
+                <div id="players-container"></div>
+            </div>
+
+            <p style="color: var(--text-secondary); margin-top: 1.5rem; font-size: 0.9rem;">
+                Game will start when both players join...
+            </p>
+        </div>
+    </div>
+
+    <!-- Game UI -->
+    <div id="game-ui">
+        <div id="controls">
+            <h3>Ship Controls</h3>
+            <div><span class="key">G</span> - Translate Mode</div>
+            <div><span class="key">R</span> - Rotate Mode</div>
+            <div><span class="key">S</span> - Scale Mode</div>
+            <div><span class="key">ESC</span> - Detach Controls</div>
+            <div style="margin-top: 10px; color: #888; font-size: 12px;">
+                You control the <span id="your-ship-color">ship</span>
+            </div>
+        </div>
+
+        <div id="player-info">
+            <h3>Game Info</h3>
+            <div class="info-item">Room: <strong id="info-room-code"></strong></div>
+            <div class="info-item">Your Ship: <strong id="info-your-ship"></strong></div>
+            <div class="info-item">Opponent: <strong id="info-opponent"></strong></div>
+        </div>
+
+        <button class="back-button" id="leave-game-btn">Leave Game</button>
+    </div>
+
+    <script type="module" src="multiplayer-app.js"></script>
+</body>
+</html>

@@ -23,6 +23,11 @@ export class GameEngine {
 
     this.isRunning = false;
     this.animationId = null;
+
+    // Multiplayer properties
+    this.networkManager = null;
+    this.isMultiplayer = false;
+    this.playerShip = null; // Which ship this player controls
   }
 
   async init() {
@@ -544,6 +549,12 @@ export class GameEngine {
 
     this.transformControls.addEventListener("change", () => {
       console.log("Ship position changed:", this.currentShip.position);
+
+      // Send ship update to network if in multiplayer mode
+      if (this.isMultiplayer && this.networkManager && this.currentShip) {
+        const shipType = this.currentShip === this.redShip ? 'red' : 'blue';
+        this.sendShipUpdate(shipType);
+      }
     });
 
     console.log(
@@ -605,6 +616,12 @@ export class GameEngine {
   // Method to switch between ships
   switchToRedShip() {
     if (this.redShip) {
+      // In multiplayer, only allow switching to assigned ship
+      if (this.isMultiplayer && this.playerShip && this.playerShip !== 'red') {
+        console.log("Cannot switch to red ship - not assigned to you");
+        return;
+      }
+
       this.currentShip = this.redShip;
       if (this.transformControls) {
         this.transformControls.attach(this.currentShip);
@@ -615,6 +632,12 @@ export class GameEngine {
 
   switchToBlueShip() {
     if (this.blueShip) {
+      // In multiplayer, only allow switching to assigned ship
+      if (this.isMultiplayer && this.playerShip && this.playerShip !== 'blue') {
+        console.log("Cannot switch to blue ship - not assigned to you");
+        return;
+      }
+
       this.currentShip = this.blueShip;
       if (this.transformControls) {
         this.transformControls.attach(this.currentShip);
@@ -748,5 +771,99 @@ export class GameEngine {
       this.transformControls.detach();
       console.log("Transform controls detached");
     }
+  }
+
+  // Multiplayer methods
+  enableMultiplayer(networkManager, playerShip) {
+    this.networkManager = networkManager;
+    this.isMultiplayer = true;
+    this.playerShip = playerShip;
+
+    console.log(`Multiplayer enabled. You control the ${playerShip} ship.`);
+
+    // Setup network callbacks
+    this.networkManager.onShipUpdated((data) => {
+      this.applyRemoteShipUpdate(data.ship, data.transform);
+    });
+
+    // Auto-select the player's assigned ship
+    if (playerShip === 'red') {
+      this.switchToRedShip();
+    } else if (playerShip === 'blue') {
+      this.switchToBlueShip();
+    }
+  }
+
+  disableMultiplayer() {
+    this.networkManager = null;
+    this.isMultiplayer = false;
+    this.playerShip = null;
+    console.log("Multiplayer disabled");
+  }
+
+  sendShipUpdate(shipType) {
+    if (!this.networkManager || !this.isMultiplayer) return;
+
+    const ship = shipType === 'red' ? this.redShip : this.blueShip;
+    if (!ship) return;
+
+    const transform = {
+      position: {
+        x: ship.position.x,
+        y: ship.position.y,
+        z: ship.position.z
+      },
+      rotation: {
+        x: ship.rotation.x,
+        y: ship.rotation.y,
+        z: ship.rotation.z
+      },
+      scale: {
+        x: ship.scale.x,
+        y: ship.scale.y,
+        z: ship.scale.z
+      }
+    };
+
+    this.networkManager.sendShipUpdate(shipType, transform);
+  }
+
+  applyRemoteShipUpdate(shipType, transform) {
+    const ship = shipType === 'red' ? this.redShip : this.blueShip;
+    if (!ship || !transform) return;
+
+    // Don't apply updates to the ship we control
+    if (this.playerShip === shipType) return;
+
+    // Apply position
+    if (transform.position) {
+      ship.position.set(
+        transform.position.x,
+        transform.position.y,
+        transform.position.z
+      );
+    }
+
+    // Apply rotation
+    if (transform.rotation) {
+      ship.rotation.set(
+        transform.rotation.x,
+        transform.rotation.y,
+        transform.rotation.z
+      );
+    }
+
+    // Apply scale
+    if (transform.scale) {
+      ship.scale.set(
+        transform.scale.x,
+        transform.scale.y,
+        transform.scale.z
+      );
+    }
+  }
+
+  getNetworkManager() {
+    return this.networkManager;
   }
 }
