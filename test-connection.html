@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Connection Test</title>
+</head>
+<body>
+    <h1>Socket.IO Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="log"></div>
+
+    <script type="module">
+        import { io } from 'socket.io-client';
+
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+
+        function log(message) {
+            console.log(message);
+            logDiv.innerHTML += `<p>${message}</p>`;
+        }
+
+        log('Test starting...');
+        log('Creating Socket.IO connection to http://localhost:3000');
+
+        const socket = io('http://localhost:3000', {
+            transports: ['websocket', 'polling']
+        });
+
+        socket.on('connect', () => {
+            log('✅ CONNECTED! Socket.IO is working!');
+            statusDiv.innerHTML = '<h2 style="color: green;">✅ Connected Successfully!</h2>';
+            statusDiv.innerHTML += '<p>Socket ID: ' + socket.id + '</p>';
+        });
+
+        socket.on('connect_error', (error) => {
+            log('❌ Connection error: ' + error.message);
+            statusDiv.innerHTML = '<h2 style="color: red;">❌ Connection Failed</h2>';
+        });
+
+        socket.on('disconnect', () => {
+            log('Disconnected');
+        });
+
+        setTimeout(() => {
+            if (!socket.connected) {
+                log('❌ Timeout - could not connect after 10 seconds');
+                statusDiv.innerHTML = '<h2 style="color: red;">❌ Timeout</h2>';
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
