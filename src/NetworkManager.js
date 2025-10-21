@@ -22,33 +22,47 @@ export class NetworkManager {
   connect(serverUrl = 'http://localhost:3000') {
     console.log('NetworkManager: Connecting to server...', serverUrl);
 
-    this.socket = io(serverUrl, {
-      transports: ['websocket', 'polling']
-    });
-
-    this.setupSocketListeners();
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Connection timeout'));
-      }, 10000);
-
-      this.socket.on('connect', () => {
-        clearTimeout(timeout);
-        this.isConnected = true;
-        console.log('NetworkManager: Connected to server');
-        if (this.callbacks.onConnected) {
-          this.callbacks.onConnected();
-        }
-        resolve();
+    try {
+      this.socket = io(serverUrl, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
       });
 
-      this.socket.on('connect_error', (error) => {
-        clearTimeout(timeout);
-        console.error('NetworkManager: Connection error:', error);
-        reject(error);
+      console.log('NetworkManager: Socket.IO instance created');
+
+      this.setupSocketListeners();
+
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          console.error('NetworkManager: Connection timeout after 20 seconds');
+          reject(new Error('Connection timeout - server may not be running'));
+        }, 20000);
+
+        this.socket.on('connect', () => {
+          clearTimeout(timeout);
+          this.isConnected = true;
+          console.log('NetworkManager: Connected to server successfully!');
+          if (this.callbacks.onConnected) {
+            this.callbacks.onConnected();
+          }
+          resolve();
+        });
+
+        this.socket.on('connect_error', (error) => {
+          console.error('NetworkManager: Connection error:', error);
+          // Don't reject immediately, let it retry
+        });
+
+        this.socket.on('disconnect', (reason) => {
+          console.log('NetworkManager: Disconnected:', reason);
+        });
       });
-    });
+    } catch (error) {
+      console.error('NetworkManager: Failed to create socket:', error);
+      return Promise.reject(error);
+    }
   }
 
   setupSocketListeners() {

@@ -31,16 +31,23 @@ class MultiplayerApp {
 
   async init() {
     try {
+      console.log('MultiplayerApp: Starting initialization...');
+
       // Initialize NetworkManager
       this.networkManager = new NetworkManager();
+      console.log('MultiplayerApp: NetworkManager created');
 
       // Connect to server
       const serverUrl = window.location.hostname === 'localhost'
         ? 'http://localhost:3000'
         : window.location.origin;
 
+      console.log('MultiplayerApp: Connecting to server:', serverUrl);
+      this.loadingDiv.textContent = `Connecting to ${serverUrl}...`;
+
       await this.networkManager.connect(serverUrl);
 
+      console.log('MultiplayerApp: Connected successfully!');
       this.setupEventListeners();
       this.setupNetworkCallbacks();
 
@@ -51,7 +58,9 @@ class MultiplayerApp {
       console.log('MultiplayerApp initialized successfully');
     } catch (error) {
       console.error('Failed to initialize multiplayer:', error);
-      this.showStatus('Failed to connect to server. Please try again.', 'error');
+      this.loadingDiv.style.display = 'none';
+      this.lobbyDiv.classList.remove('hidden');
+      this.showStatus(`Failed to connect to server: ${error.message}. Please check the console.`, 'error');
     }
   }
 
