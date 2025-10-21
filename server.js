@@ -21,10 +21,13 @@ const PORT = process.env.PORT || 3000;
 // Game rooms storage
 const rooms = new Map();
 
+// Disconnection grace period (60 seconds)
+const DISCONNECTION_GRACE_PERIOD = 60000;
+
 // Room structure:
 // {
 //   id: string,
-//   players: [{ id, ship, nickname }],
+//   players: [{ id, ship, nickname, connected, disconnectedAt }],
 //   gameState: { redShip: {}, blueShip: {} }
 // }
 
@@ -41,7 +44,9 @@ io.on('connection', (socket) => {
       players: [{
         id: socket.id,
         ship: 'red',
-        nickname: nickname
+        nickname: nickname,
+        connected: true,
+        disconnectedAt: null
       }],
       gameState: {
         redShip: { position: null, rotation: null, scale: null },
@@ -81,17 +86,20 @@ io.on('connection', (socket) => {
     room.players.push({
       id: socket.id,
       ship: playerShip,
-      nickname: playerNickname
+      nickname: playerNickname,
+      connected: true,
+      disconnectedAt: null
     });
 
     socket.join(roomId);
 
-    // Notify the joining player
+    // Notify the joining player (send them the full player list)
     socket.emit('room-joined', {
       roomId,
       playerShip,
       nickname: playerNickname,
-      gameState: room.gameState
+      gameState: room.gameState,
+      players: room.players // Send all players including Player 1
     });
 
     // Notify the other player
@@ -136,29 +144,98 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('ship-selection-changed', { ship });
   });
 
+  // Handle reconnection
+  socket.on('reconnect-room', (data) => {
+    const { roomId, playerShip } = data;
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      socket.emit('error', { message: 'Room not found or expired' });
+      return;
+    }
+
+    // Find the player by ship (in case they have a new socket ID)
+    const player = room.players.find(p => p.ship === playerShip);
+
+    if (!player) {
+      socket.emit('error', { message: 'Player not found in this room' });
+      return;
+    }
+
+    // Update player's socket ID and mark as connected
+    player.id = socket.id;
+    player.connected = true;
+    player.disconnectedAt = null;
+
+    socket.join(roomId);
+
+    // Send current game state and player list
+    socket.emit('reconnected', {
+      roomId,
+      playerShip,
+      nickname: player.nickname,
+      gameState: room.gameState,
+      players: room.players
+    });
+
+    // Notify other players
+    socket.to(roomId).emit('player-reconnected', {
+      playerShip,
+      nickname: player.nickname
+    });
+
+    console.log(`Player ${socket.id} reconnected to room: ${roomId} as ${playerShip} ship`);
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log(`Player disconnected: ${socket.id}`);
 
-    // Find and cleanup rooms
+    // Find and mark player as disconnected (don't remove immediately)
     for (const [roomId, room] of rooms.entries()) {
-      const playerIndex = room.players.findIndex(p => p.id === socket.id);
+      const player = room.players.find(p => p.id === socket.id);
 
-      if (playerIndex !== -1) {
-        const disconnectedPlayer = room.players[playerIndex];
-        room.players.splice(playerIndex, 1);
+      if (player) {
+        player.connected = false;
+        player.disconnectedAt = Date.now();
 
         // Notify remaining players
-        socket.to(roomId).emit('player-left', {
-          playerShip: disconnectedPlayer.ship,
-          nickname: disconnectedPlayer.nickname
+        socket.to(roomId).emit('player-disconnected', {
+          playerShip: player.ship,
+          nickname: player.nickname
         });
 
-        // Delete room if empty
-        if (room.players.length === 0) {
-          rooms.delete(roomId);
-          console.log(`Room deleted: ${roomId}`);
-        }
+        console.log(`Player ${player.nickname} (${player.ship}) disconnected from room ${roomId}. Grace period: ${DISCONNECTION_GRACE_PERIOD}ms`);
+
+        // Schedule cleanup after grace period
+        setTimeout(() => {
+          const currentRoom = rooms.get(roomId);
+          if (!currentRoom) return;
+
+          const currentPlayer = currentRoom.players.find(p => p.ship === player.ship);
+
+          // Only remove if still disconnected after grace period
+          if (currentPlayer && !currentPlayer.connected) {
+            const playerIndex = currentRoom.players.indexOf(currentPlayer);
+            currentRoom.players.splice(playerIndex, 1);
+
+            console.log(`Player ${currentPlayer.nickname} removed from room ${roomId} after grace period`);
+
+            // Notify remaining players
+            io.to(roomId).emit('player-left', {
+              playerShip: currentPlayer.ship,
+              nickname: currentPlayer.nickname
+            });
+
+            // Delete room if empty
+            if (currentRoom.players.length === 0) {
+              rooms.delete(roomId);
+              console.log(`Room deleted: ${roomId}`);
+            }
+          }
+        }, DISCONNECTION_GRACE_PERIOD);
+
+        break;
       }
     }
   });

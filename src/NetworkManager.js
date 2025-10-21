@@ -12,6 +12,9 @@ export class NetworkManager {
       onRoomJoined: null,
       onPlayerJoined: null,
       onPlayerLeft: null,
+      onPlayerDisconnected: null,
+      onPlayerReconnected: null,
+      onReconnected: null,
       onShipUpdated: null,
       onError: null,
       onConnected: null,
@@ -73,6 +76,9 @@ export class NetworkManager {
       this.playerShip = data.playerShip;
       this.nickname = data.nickname;
 
+      // Save session for reconnection
+      this.saveSession();
+
       if (this.callbacks.onRoomCreated) {
         this.callbacks.onRoomCreated(data);
       }
@@ -84,6 +90,9 @@ export class NetworkManager {
       this.roomId = data.roomId;
       this.playerShip = data.playerShip;
       this.nickname = data.nickname;
+
+      // Save session for reconnection
+      this.saveSession();
 
       if (this.callbacks.onRoomJoined) {
         this.callbacks.onRoomJoined(data);
@@ -99,12 +108,42 @@ export class NetworkManager {
       }
     });
 
-    // Player left
+    // Player left permanently
     this.socket.on('player-left', (data) => {
-      console.log('NetworkManager: Player left:', data);
+      console.log('NetworkManager: Player left permanently:', data);
 
       if (this.callbacks.onPlayerLeft) {
         this.callbacks.onPlayerLeft(data);
+      }
+    });
+
+    // Player disconnected (temporarily)
+    this.socket.on('player-disconnected', (data) => {
+      console.log('NetworkManager: Player disconnected:', data);
+
+      if (this.callbacks.onPlayerDisconnected) {
+        this.callbacks.onPlayerDisconnected(data);
+      }
+    });
+
+    // Player reconnected
+    this.socket.on('player-reconnected', (data) => {
+      console.log('NetworkManager: Player reconnected:', data);
+
+      if (this.callbacks.onPlayerReconnected) {
+        this.callbacks.onPlayerReconnected(data);
+      }
+    });
+
+    // Successfully reconnected to room
+    this.socket.on('reconnected', (data) => {
+      console.log('NetworkManager: Reconnected to room:', data);
+      this.roomId = data.roomId;
+      this.playerShip = data.playerShip;
+      this.nickname = data.nickname;
+
+      if (this.callbacks.onReconnected) {
+        this.callbacks.onReconnected(data);
       }
     });
 
@@ -155,6 +194,27 @@ export class NetworkManager {
 
     console.log('NetworkManager: Joining room:', roomId);
     this.socket.emit('join-room', { roomId, nickname });
+  }
+
+  reconnectToRoom() {
+    if (!this.socket || !this.isConnected) {
+      console.error('NetworkManager: Not connected to server');
+      return false;
+    }
+
+    const session = this.loadSession();
+    if (!session || !session.roomId || !session.playerShip) {
+      console.log('NetworkManager: No valid session to reconnect');
+      return false;
+    }
+
+    console.log('NetworkManager: Attempting to reconnect to room:', session.roomId);
+    this.socket.emit('reconnect-room', {
+      roomId: session.roomId,
+      playerShip: session.playerShip
+    });
+
+    return true;
   }
 
   sendShipUpdate(ship, transform) {
@@ -249,6 +309,18 @@ export class NetworkManager {
     this.callbacks.onDisconnected = callback;
   }
 
+  onPlayerDisconnected(callback) {
+    this.callbacks.onPlayerDisconnected = callback;
+  }
+
+  onPlayerReconnected(callback) {
+    this.callbacks.onPlayerReconnected = callback;
+  }
+
+  onReconnected(callback) {
+    this.callbacks.onReconnected = callback;
+  }
+
   // Getters
   getPlayerShip() {
     return this.playerShip;
@@ -264,5 +336,52 @@ export class NetworkManager {
 
   isInRoom() {
     return this.roomId !== null;
+  }
+
+  // Session management for reconnection
+  saveSession() {
+    if (this.roomId && this.playerShip && this.nickname) {
+      const session = {
+        roomId: this.roomId,
+        playerShip: this.playerShip,
+        nickname: this.nickname,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('space_scrap_session', JSON.stringify(session));
+      console.log('NetworkManager: Session saved', session);
+    }
+  }
+
+  loadSession() {
+    try {
+      const sessionData = localStorage.getItem('space_scrap_session');
+      if (!sessionData) return null;
+
+      const session = JSON.parse(sessionData);
+
+      // Check if session is less than 1 hour old
+      const ONE_HOUR = 60 * 60 * 1000;
+      if (Date.now() - session.timestamp > ONE_HOUR) {
+        console.log('NetworkManager: Session expired');
+        this.clearSession();
+        return null;
+      }
+
+      console.log('NetworkManager: Session loaded', session);
+      return session;
+    } catch (error) {
+      console.error('NetworkManager: Failed to load session', error);
+      return null;
+    }
+  }
+
+  clearSession() {
+    localStorage.removeItem('space_scrap_session');
+    console.log('NetworkManager: Session cleared');
+  }
+
+  hasSession() {
+    const session = this.loadSession();
+    return session !== null;
   }
 }

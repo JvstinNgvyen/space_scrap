@@ -51,9 +51,23 @@ class MultiplayerApp {
       this.setupEventListeners();
       this.setupNetworkCallbacks();
 
-      // Show lobby
-      this.loadingDiv.style.display = 'none';
-      this.lobbyDiv.classList.remove('hidden');
+      // Check for existing session and attempt reconnection
+      if (this.networkManager.hasSession()) {
+        console.log('MultiplayerApp: Found existing session, attempting reconnection...');
+        this.loadingDiv.textContent = 'Reconnecting to your game...';
+
+        const reconnected = this.networkManager.reconnectToRoom();
+        if (!reconnected) {
+          // No valid session, show lobby
+          this.loadingDiv.style.display = 'none';
+          this.lobbyDiv.classList.remove('hidden');
+        }
+        // Otherwise wait for 'reconnected' event
+      } else {
+        // Show lobby
+        this.loadingDiv.style.display = 'none';
+        this.lobbyDiv.classList.remove('hidden');
+      }
 
       console.log('MultiplayerApp initialized successfully');
     } catch (error) {
@@ -112,6 +126,15 @@ class MultiplayerApp {
     // Room joined
     this.networkManager.onRoomJoined((data) => {
       console.log('Room joined:', data);
+
+      // Set players array from server data
+      if (data.players) {
+        this.players = data.players.map(p => ({
+          nickname: p.nickname,
+          ship: p.ship
+        }));
+      }
+
       this.showStatus('Joined room! Starting game...', 'success');
 
       // Start the game
@@ -137,13 +160,47 @@ class MultiplayerApp {
       }, 1000);
     });
 
-    // Player left
+    // Player disconnected temporarily
+    this.networkManager.onPlayerDisconnected((data) => {
+      console.log('Player disconnected:', data);
+      this.showConnectionStatus(`⚠️ ${data.nickname} disconnected. Waiting...`, 'warning');
+    });
+
+    // Player reconnected
+    this.networkManager.onPlayerReconnected((data) => {
+      console.log('Player reconnected:', data);
+      this.showConnectionStatus(`✅ ${data.nickname} reconnected!`, 'success');
+      setTimeout(() => this.hideConnectionStatus(), 3000);
+    });
+
+    // Successfully reconnected to room
+    this.networkManager.onReconnected((data) => {
+      console.log('Reconnected to room:', data);
+
+      // Set players array from server data
+      if (data.players) {
+        this.players = data.players.map(p => ({
+          nickname: p.nickname,
+          ship: p.ship
+        }));
+      }
+
+      this.showStatus('Reconnected successfully!', 'success');
+
+      // Start the game
+      setTimeout(() => {
+        this.startGame();
+      }, 1000);
+    });
+
+    // Player left permanently
     this.networkManager.onPlayerLeft((data) => {
-      console.log('Player left:', data);
+      console.log('Player left permanently:', data);
       this.showStatus('Opponent left the game', 'error');
 
       // Return to lobby
       setTimeout(() => {
+        this.networkManager.clearSession();
         this.returnToLobby();
       }, 2000);
     });
@@ -291,6 +348,32 @@ class MultiplayerApp {
   showStatus(message, type) {
     this.statusMessage.textContent = message;
     this.statusMessage.className = type;
+  }
+
+  showConnectionStatus(message, type) {
+    const statusDiv = document.getElementById('connection-status');
+    if (statusDiv) {
+      statusDiv.textContent = message;
+      statusDiv.style.display = 'block';
+
+      // Set colors based on type
+      if (type === 'warning') {
+        statusDiv.style.backgroundColor = 'rgba(234, 179, 8, 0.2)';
+        statusDiv.style.border = '1px solid #eab308';
+        statusDiv.style.color = '#fef08a';
+      } else if (type === 'success') {
+        statusDiv.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
+        statusDiv.style.border = '1px solid #22c55e';
+        statusDiv.style.color = '#86efac';
+      }
+    }
+  }
+
+  hideConnectionStatus() {
+    const statusDiv = document.getElementById('connection-status');
+    if (statusDiv) {
+      statusDiv.style.display = 'none';
+    }
   }
 }
 
