@@ -20,6 +20,11 @@ class MultiplayerApp {
     this.joinRoomBtn = document.getElementById('join-room-btn');
     this.leaveGameBtn = document.getElementById('leave-game-btn');
 
+    // Modal
+    this.leaveConfirmModal = document.getElementById('leave-confirm-modal');
+    this.confirmLeaveBtn = document.getElementById('confirm-leave-btn');
+    this.cancelLeaveBtn = document.getElementById('cancel-leave-btn');
+
     // Inputs
     this.createNicknameInput = document.getElementById('create-nickname');
     this.joinNicknameInput = document.getElementById('join-nickname');
@@ -103,7 +108,23 @@ class MultiplayerApp {
     });
 
     this.leaveGameBtn.addEventListener('click', () => {
+      this.showLeaveConfirmation();
+    });
+
+    this.confirmLeaveBtn.addEventListener('click', () => {
+      this.hideLeaveConfirmation();
       this.leaveGame();
+    });
+
+    this.cancelLeaveBtn.addEventListener('click', () => {
+      this.hideLeaveConfirmation();
+    });
+
+    // Close modal when clicking outside
+    this.leaveConfirmModal.addEventListener('click', (e) => {
+      if (e.target === this.leaveConfirmModal) {
+        this.hideLeaveConfirmation();
+      }
     });
 
     // Room code input formatting
@@ -331,7 +352,19 @@ class MultiplayerApp {
     });
   }
 
+  showLeaveConfirmation() {
+    this.leaveConfirmModal.classList.add('active');
+  }
+
+  hideLeaveConfirmation() {
+    this.leaveConfirmModal.classList.remove('active');
+  }
+
   leaveGame() {
+    // Clear localStorage
+    localStorage.removeItem('space_scrap_session');
+    console.log('MultiplayerApp: Cleared localStorage session');
+
     if (this.gameEngine) {
       this.gameEngine.dispose();
       this.gameEngine = null;
