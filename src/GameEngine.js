@@ -827,13 +827,16 @@ export class GameEngine {
     const wasMyTurn = this.isMyTurn;
     this.isMyTurn = this.networkManager.isMyTurn();
 
-    console.log(`Turn changed to ${data.currentTurn}. My turn: ${this.isMyTurn}`);
+    console.log(`GameEngine: Turn changed to ${data.currentTurn}. Was my turn: ${wasMyTurn}, Now my turn: ${this.isMyTurn}, My ship: ${this.playerShip}`);
 
     this.updateControlsForTurn();
   }
 
   updateControlsForTurn() {
-    if (!this.transformControls) return;
+    if (!this.transformControls) {
+      console.log('GameEngine: No transform controls to update');
+      return;
+    }
 
     if (this.isMultiplayer) {
       // Enable or disable transform controls based on turn
@@ -846,7 +849,7 @@ export class GameEngine {
         this.transformControls.visible = false;
       }
 
-      console.log(`Transform controls ${this.isMyTurn ? 'enabled' : 'disabled'} for turn`);
+      console.log(`GameEngine: Transform controls ${this.isMyTurn ? 'enabled' : 'disabled'} for turn. Controls enabled=${this.transformControls.enabled}, visible=${this.transformControls.visible}`);
     } else {
       // Single-player: always enabled
       this.transformControls.enabled = true;

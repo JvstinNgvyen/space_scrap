@@ -190,7 +190,7 @@ class MultiplayerApp {
         this.updateEndTurnButton();
         const currentTurn = this.networkManager.getCurrentTurn();
         const turnNumber = this.networkManager.getTurnNumber();
-        this.updateTurnUI({ currentTurn, turnNumber });
+        this.updateTurnUI({ currentTurn, turnNumber }, false); // Don't show notification when player joins
       }
 
       // Start the game
@@ -284,8 +284,8 @@ class MultiplayerApp {
 
     // Turn changed
     this.networkManager.onTurnChanged((data) => {
-      console.log('Turn changed:', data);
-      this.updateTurnUI(data);
+      console.log('MultiplayerApp: Turn changed event received:', data);
+      this.updateTurnUI(data, true); // Show notification on turn change
     });
   }
 
@@ -460,16 +460,26 @@ class MultiplayerApp {
     const turnNumber = this.networkManager.getTurnNumber();
     const isMyTurn = this.networkManager.isMyTurn();
 
-    this.updateTurnUI({ currentTurn, turnNumber });
+    console.log('Initializing turn UI:', { currentTurn, turnNumber, isMyTurn, playerCount: this.players.length });
+
+    this.updateTurnUI({ currentTurn, turnNumber }, false); // Don't show notification on init
 
     // Update button state based on player count
     this.updateEndTurnButton();
   }
 
-  updateTurnUI(data) {
+  updateTurnUI(data, showNotification = true) {
     const isMyTurn = this.networkManager.isMyTurn();
     const turnStatusDiv = document.getElementById('turn-status');
     const turnNumberSpan = document.getElementById('turn-number');
+
+    console.log('Updating turn UI:', {
+      currentTurn: data.currentTurn,
+      turnNumber: data.turnNumber,
+      isMyTurn,
+      playerCount: this.players.length,
+      playerShip: this.networkManager.getPlayerShip()
+    });
 
     // Update turn number
     if (turnNumberSpan) {
@@ -493,8 +503,8 @@ class MultiplayerApp {
     // Update End Turn button
     this.updateEndTurnButton();
 
-    // Show brief notification when turn changes (only if 2 players)
-    if (this.players.length >= 2) {
+    // Show brief notification when turn changes (only if 2 players and not initial load)
+    if (this.players.length >= 2 && showNotification) {
       this.showTurnChangeNotification(isMyTurn);
     }
   }
@@ -548,6 +558,13 @@ class MultiplayerApp {
   }
 
   endTurn() {
+    console.log('EndTurn called. Current state:', {
+      isMyTurn: this.networkManager.isMyTurn(),
+      currentTurn: this.networkManager.getCurrentTurn(),
+      playerShip: this.networkManager.getPlayerShip(),
+      playerCount: this.players.length
+    });
+
     if (!this.networkManager.isMyTurn()) {
       console.log('Cannot end turn - not your turn');
       return;
@@ -560,7 +577,7 @@ class MultiplayerApp {
       return;
     }
 
-    console.log('Ending turn...');
+    console.log('Sending end-turn event to server...');
     this.networkManager.endTurn();
   }
 }
