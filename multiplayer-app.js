@@ -185,6 +185,14 @@ class MultiplayerApp {
       this.updatePlayerList();
       this.showStatus('Opponent joined! Starting game...', 'success');
 
+      // Update turn UI if game already started
+      if (this.isGameStarted) {
+        this.updateEndTurnButton();
+        const currentTurn = this.networkManager.getCurrentTurn();
+        const turnNumber = this.networkManager.getTurnNumber();
+        this.updateTurnUI({ currentTurn, turnNumber });
+      }
+
       // Start the game
       setTimeout(() => {
         this.startGame();
@@ -453,12 +461,14 @@ class MultiplayerApp {
     const isMyTurn = this.networkManager.isMyTurn();
 
     this.updateTurnUI({ currentTurn, turnNumber });
+
+    // Update button state based on player count
+    this.updateEndTurnButton();
   }
 
   updateTurnUI(data) {
     const isMyTurn = this.networkManager.isMyTurn();
     const turnStatusDiv = document.getElementById('turn-status');
-    const endTurnBtn = document.getElementById('end-turn-btn');
     const turnNumberSpan = document.getElementById('turn-number');
 
     // Update turn number
@@ -468,7 +478,10 @@ class MultiplayerApp {
 
     // Update turn status
     if (turnStatusDiv) {
-      if (isMyTurn) {
+      if (this.players.length < 2) {
+        turnStatusDiv.textContent = 'WAITING FOR OPPONENT';
+        turnStatusDiv.className = 'turn-status waiting';
+      } else if (isMyTurn) {
         turnStatusDiv.textContent = 'YOUR TURN';
         turnStatusDiv.className = 'turn-status active';
       } else {
@@ -478,12 +491,22 @@ class MultiplayerApp {
     }
 
     // Update End Turn button
-    if (endTurnBtn) {
-      endTurnBtn.disabled = !isMyTurn;
-    }
+    this.updateEndTurnButton();
 
-    // Show brief notification when turn changes
-    this.showTurnChangeNotification(isMyTurn);
+    // Show brief notification when turn changes (only if 2 players)
+    if (this.players.length >= 2) {
+      this.showTurnChangeNotification(isMyTurn);
+    }
+  }
+
+  updateEndTurnButton() {
+    const endTurnBtn = document.getElementById('end-turn-btn');
+    const isMyTurn = this.networkManager.isMyTurn();
+
+    if (endTurnBtn) {
+      // Disable if not player's turn OR if waiting for opponent
+      endTurnBtn.disabled = !isMyTurn || this.players.length < 2;
+    }
   }
 
   showTurnChangeNotification(isMyTurn) {
@@ -527,6 +550,13 @@ class MultiplayerApp {
   endTurn() {
     if (!this.networkManager.isMyTurn()) {
       console.log('Cannot end turn - not your turn');
+      return;
+    }
+
+    // Check if opponent is in the game
+    if (this.players.length < 2) {
+      this.showConnectionStatus('⚠️ Waiting for opponent to join before ending turn', 'warning');
+      setTimeout(() => this.hideConnectionStatus(), 3000);
       return;
     }
 

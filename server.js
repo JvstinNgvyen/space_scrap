@@ -185,6 +185,13 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Check if both players are in the room
+    if (room.players.length < 2) {
+      socket.emit('error', { message: 'Waiting for opponent to join' });
+      console.log(`Room ${roomId}: Cannot end turn - only ${room.players.length} player(s) in room`);
+      return;
+    }
+
     // Validate it's actually the player's turn
     if (room.currentTurn !== player.ship) {
       socket.emit('error', { message: 'Not your turn' });
@@ -195,13 +202,14 @@ io.on('connection', (socket) => {
     room.currentTurn = room.currentTurn === 'red' ? 'blue' : 'red';
     room.turnNumber += 1;
 
+    console.log(`Room ${roomId}: Turn changed to ${room.currentTurn} (Turn #${room.turnNumber})`);
+    console.log(`Room ${roomId}: Emitting to all ${room.players.length} players in room`);
+
     // Notify all players in the room about the turn change
     io.to(roomId).emit('turn-changed', {
       currentTurn: room.currentTurn,
       turnNumber: room.turnNumber
     });
-
-    console.log(`Room ${roomId}: Turn changed to ${room.currentTurn} (Turn #${room.turnNumber})`);
   });
 
   // Handle reconnection
