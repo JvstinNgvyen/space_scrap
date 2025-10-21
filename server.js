@@ -268,8 +268,22 @@ io.on('connection', (socket) => {
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static('dist'));
-  app.get('*', (req, res) => {
+
+  // Serve specific HTML files
+  app.get('/', (req, res) => {
     res.sendFile(join(__dirname, 'dist', 'index.html'));
+  });
+
+  app.get('/game.html', (req, res) => {
+    res.sendFile(join(__dirname, 'dist', 'game.html'));
+  });
+
+  app.get('/multiplayer.html', (req, res) => {
+    res.sendFile(join(__dirname, 'dist', 'multiplayer.html'));
+  });
+
+  app.get('/test-connection.html', (req, res) => {
+    res.sendFile(join(__dirname, 'dist', 'test-connection.html'));
   });
 }
 
