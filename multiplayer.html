@@ -324,6 +324,118 @@
             background: var(--accent-color);
         }
 
+        /* Turn Indicator */
+        #turn-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            border: 3px solid var(--accent-color);
+            text-align: center;
+            z-index: 150;
+            pointer-events: none;
+        }
+
+        #turn-indicator h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #turn-indicator.your-turn {
+            border-color: #22c55e;
+        }
+
+        #turn-indicator.your-turn h2 {
+            color: #22c55e;
+        }
+
+        #turn-indicator.opponent-turn {
+            border-color: #ef4444;
+        }
+
+        #turn-indicator.opponent-turn h2 {
+            color: #ef4444;
+        }
+
+        #turn-indicator p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Turn Controls */
+        #turn-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+            min-width: 200px;
+        }
+
+        #turn-controls h4 {
+            margin: 0 0 10px 0;
+            color: #4ECDC4;
+            font-size: 14px;
+        }
+
+        .turn-status {
+            padding: 0.5rem;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .turn-status.active {
+            background: rgba(34, 197, 94, 0.3);
+            border: 2px solid #22c55e;
+            color: #86efac;
+        }
+
+        .turn-status.waiting {
+            background: rgba(239, 68, 68, 0.3);
+            border: 2px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        #end-turn-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        #end-turn-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        #end-turn-btn:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .turn-number {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
         /* Confirmation Modal */
         #leave-confirm-modal {
             position: fixed;
@@ -477,6 +589,13 @@
             <div class="info-item">Your Ship: <strong id="info-your-ship"></strong></div>
             <div class="info-item">Opponent: <strong id="info-opponent"></strong></div>
             <div id="connection-status" style="margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 12px; display: none;"></div>
+        </div>
+
+        <div id="turn-controls">
+            <h4>Turn Status</h4>
+            <div id="turn-status" class="turn-status waiting">Waiting...</div>
+            <button id="end-turn-btn" disabled>End Turn</button>
+            <div class="turn-number">Turn: <span id="turn-number">1</span></div>
         </div>
 
         <button class="back-button" id="leave-game-btn">Leave Game</button>

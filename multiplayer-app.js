@@ -19,6 +19,7 @@ class MultiplayerApp {
     this.createRoomBtn = document.getElementById('create-room-btn');
     this.joinRoomBtn = document.getElementById('join-room-btn');
     this.leaveGameBtn = document.getElementById('leave-game-btn');
+    this.endTurnBtn = document.getElementById('end-turn-btn');
 
     // Modal
     this.leaveConfirmModal = document.getElementById('leave-confirm-modal');
@@ -131,6 +132,13 @@ class MultiplayerApp {
     this.roomCodeInput.addEventListener('input', (e) => {
       e.target.value = e.target.value.toUpperCase();
     });
+
+    // End Turn button
+    if (this.endTurnBtn) {
+      this.endTurnBtn.addEventListener('click', () => {
+        this.endTurn();
+      });
+    }
   }
 
   setupNetworkCallbacks() {
@@ -265,6 +273,12 @@ class MultiplayerApp {
         window.location.reload();
       }, 2000);
     });
+
+    // Turn changed
+    this.networkManager.onTurnChanged((data) => {
+      console.log('Turn changed:', data);
+      this.updateTurnUI(data);
+    });
   }
 
   showWaitingRoom(roomCode) {
@@ -325,6 +339,9 @@ class MultiplayerApp {
 
     // Setup event listeners
     this.setupGameEventListeners();
+
+    // Initialize turn UI
+    this.initializeTurnUI();
 
     // Start the game
     this.gameEngine.start();
@@ -428,6 +445,93 @@ class MultiplayerApp {
     if (statusDiv) {
       statusDiv.style.display = 'none';
     }
+  }
+
+  initializeTurnUI() {
+    const currentTurn = this.networkManager.getCurrentTurn();
+    const turnNumber = this.networkManager.getTurnNumber();
+    const isMyTurn = this.networkManager.isMyTurn();
+
+    this.updateTurnUI({ currentTurn, turnNumber });
+  }
+
+  updateTurnUI(data) {
+    const isMyTurn = this.networkManager.isMyTurn();
+    const turnStatusDiv = document.getElementById('turn-status');
+    const endTurnBtn = document.getElementById('end-turn-btn');
+    const turnNumberSpan = document.getElementById('turn-number');
+
+    // Update turn number
+    if (turnNumberSpan) {
+      turnNumberSpan.textContent = data.turnNumber;
+    }
+
+    // Update turn status
+    if (turnStatusDiv) {
+      if (isMyTurn) {
+        turnStatusDiv.textContent = 'YOUR TURN';
+        turnStatusDiv.className = 'turn-status active';
+      } else {
+        turnStatusDiv.textContent = "OPPONENT'S TURN";
+        turnStatusDiv.className = 'turn-status waiting';
+      }
+    }
+
+    // Update End Turn button
+    if (endTurnBtn) {
+      endTurnBtn.disabled = !isMyTurn;
+    }
+
+    // Show brief notification when turn changes
+    this.showTurnChangeNotification(isMyTurn);
+  }
+
+  showTurnChangeNotification(isMyTurn) {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('turn-notification');
+    if (!notification) {
+      notification = document.createElement('div');
+      notification.id = 'turn-notification';
+      notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        padding: 2rem 3rem;
+        border-radius: 12px;
+        border: 3px solid ${isMyTurn ? '#22c55e' : '#ef4444'};
+        text-align: center;
+        z-index: 200;
+        font-size: 2rem;
+        font-weight: 700;
+        color: ${isMyTurn ? '#22c55e' : '#ef4444'};
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      `;
+      document.body.appendChild(notification);
+    }
+
+    notification.textContent = isMyTurn ? 'YOUR TURN!' : "OPPONENT'S TURN";
+    notification.style.borderColor = isMyTurn ? '#22c55e' : '#ef4444';
+    notification.style.color = isMyTurn ? '#22c55e' : '#ef4444';
+    notification.style.opacity = '1';
+
+    // Hide after 2 seconds
+    setTimeout(() => {
+      notification.style.opacity = '0';
+    }, 2000);
+  }
+
+  endTurn() {
+    if (!this.networkManager.isMyTurn()) {
+      console.log('Cannot end turn - not your turn');
+      return;
+    }
+
+    console.log('Ending turn...');
+    this.networkManager.endTurn();
   }
 }
 
