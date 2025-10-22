@@ -716,11 +716,14 @@ export class GameEngine {
         this.transformControls.setMode("scale");
         console.log("Transform mode: Scale");
         break;
-      case "Digit1": // Switch to red ship
-        this.switchToRedShip();
+      case "Digit1": // Select ship 1
+        this.selectShip(0);
         break;
-      case "Digit2": // Switch to blue ship
-        this.switchToBlueShip();
+      case "Digit2": // Select ship 2
+        this.selectShip(1);
+        break;
+      case "Digit3": // Select ship 3
+        this.selectShip(2);
         break;
       case "Escape": // Detach controls
         this.transformControls.detach();
@@ -729,7 +732,63 @@ export class GameEngine {
     }
   }
 
-  // Method to switch between ships - cycles through ships in the team
+  // Method to select a specific ship by index (0-2)
+  selectShip(shipIndex) {
+    // Validate index
+    if (shipIndex < 0 || shipIndex > 2) {
+      console.log("Invalid ship index:", shipIndex);
+      return;
+    }
+
+    // In multiplayer mode, only allow selecting ships during your turn
+    if (this.isMultiplayer && !this.isMyTurn) {
+      console.log("Cannot select ship - not your turn");
+      return;
+    }
+
+    // Determine which team's ships to use
+    let ships;
+    if (this.isMultiplayer && this.playerShip) {
+      // In multiplayer, only allow selecting from player's assigned team
+      ships = this.playerShip === 'red' ? this.redShips : this.blueShips;
+    } else {
+      // In single-player or if no assignment, determine from current ship
+      if (this.redShips.includes(this.currentShip)) {
+        ships = this.redShips;
+      } else {
+        ships = this.blueShips;
+      }
+    }
+
+    // Check if ship exists
+    if (!ships || ships.length <= shipIndex) {
+      console.log(`Ship ${shipIndex + 1} does not exist for this team`);
+      return;
+    }
+
+    // Select the ship
+    this.currentShipIndex = shipIndex;
+    this.currentShip = ships[shipIndex];
+
+    // Attach transform controls
+    if (this.transformControls) {
+      this.transformControls.attach(this.currentShip);
+    }
+
+    const teamName = this.redShips.includes(this.currentShip) ? 'red' : 'blue';
+    console.log(`Selected ${teamName} ship ${shipIndex + 1}/3:`, this.currentShip.name);
+
+    // Dispatch custom event for UI updates
+    window.dispatchEvent(new CustomEvent('ship-selected', {
+      detail: {
+        shipIndex: shipIndex,
+        team: teamName,
+        shipName: this.currentShip.name
+      }
+    }));
+  }
+
+  // Legacy method - cycles through ships in the team
   switchToRedShip() {
     if (this.redShips.length === 0) return;
 
@@ -932,9 +991,9 @@ export class GameEngine {
 
     // Auto-select the player's assigned ship
     if (playerShip === 'red') {
-      this.switchToRedShip();
+      this.selectShip(0); // Select first ship of player's team
     } else if (playerShip === 'blue') {
-      this.switchToBlueShip();
+      this.selectShip(0); // Select first ship of player's team
     }
 
     // Update controls based on initial turn state

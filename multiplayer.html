@@ -574,12 +574,16 @@
     <div id="game-ui">
         <div id="controls">
             <h3>Ship Controls</h3>
+            <div><span class="key">1</span><span class="key">2</span><span class="key">3</span> - Select Ship</div>
             <div><span class="key">G</span> - Translate Mode</div>
             <div><span class="key">R</span> - Rotate Mode</div>
             <div><span class="key">S</span> - Scale Mode</div>
             <div><span class="key">ESC</span> - Detach Controls</div>
             <div style="margin-top: 10px; color: #888; font-size: 12px;">
                 You control the <span id="your-ship-color">ship</span>
+            </div>
+            <div id="current-ship-indicator" style="margin-top: 10px; padding: 8px; border-radius: 4px; background: rgba(99, 102, 241, 0.2); border: 1px solid var(--accent-color); font-size: 12px; display: none;">
+                <strong>Selected:</strong> <span id="current-ship-name">Ship 1</span>
             </div>
         </div>
 
