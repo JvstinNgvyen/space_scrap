@@ -382,6 +382,34 @@ class MultiplayerApp {
         }
       }
     });
+
+    // Handle ship selection events
+    window.addEventListener('ship-selected', (event) => {
+      this.updateSelectedShipUI(event.detail);
+    });
+  }
+
+  updateSelectedShipUI(detail) {
+    const indicator = document.getElementById('current-ship-indicator');
+    const shipName = document.getElementById('current-ship-name');
+
+    if (indicator && shipName) {
+      indicator.style.display = 'block';
+      shipName.textContent = `Ship ${detail.shipIndex + 1}`;
+
+      // Update color based on team
+      if (detail.team === 'red') {
+        indicator.style.background = 'rgba(239, 68, 68, 0.2)';
+        indicator.style.borderColor = '#ef4444';
+        indicator.style.color = '#fca5a5';
+      } else {
+        indicator.style.background = 'rgba(59, 130, 246, 0.2)';
+        indicator.style.borderColor = '#3b82f6';
+        indicator.style.color = '#93c5fd';
+      }
+
+      console.log('UI updated for selected ship:', detail);
+    }
   }
 
   showLeaveConfirmation() {
