@@ -432,4 +432,91 @@ export class NetworkManager {
     const session = this.loadSession();
     return session !== null;
   }
+
+  // Profile management
+  saveProfile(profileData) {
+    try {
+      const profile = {
+        ...profileData,
+        lastUpdated: Date.now()
+      };
+      localStorage.setItem('space_scrap_profile', JSON.stringify(profile));
+      console.log('NetworkManager: Profile saved', profile);
+      return true;
+    } catch (error) {
+      console.error('NetworkManager: Failed to save profile', error);
+      return false;
+    }
+  }
+
+  loadProfile() {
+    try {
+      const profileData = localStorage.getItem('space_scrap_profile');
+      if (!profileData) return null;
+
+      const profile = JSON.parse(profileData);
+      console.log('NetworkManager: Profile loaded', profile);
+      return profile;
+    } catch (error) {
+      console.error('NetworkManager: Failed to load profile', error);
+      return null;
+    }
+  }
+
+  getProfileNickname() {
+    const profile = this.loadProfile();
+    return profile ? profile.nickname : null;
+  }
+
+  getPreferredShip() {
+    const profile = this.loadProfile();
+    return profile ? profile.preferredShip : 'red';
+  }
+
+  // Game statistics
+  loadStats() {
+    try {
+      const statsData = localStorage.getItem('space_scrap_stats');
+      if (!statsData) {
+        return {
+          gamesPlayed: 0,
+          gamesWon: 0,
+          gamesLost: 0
+        };
+      }
+
+      const stats = JSON.parse(statsData);
+      return stats;
+    } catch (error) {
+      console.error('NetworkManager: Failed to load stats', error);
+      return {
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0
+      };
+    }
+  }
+
+  saveStats(statsData) {
+    try {
+      localStorage.setItem('space_scrap_stats', JSON.stringify(statsData));
+      console.log('NetworkManager: Stats saved', statsData);
+      return true;
+    } catch (error) {
+      console.error('NetworkManager: Failed to save stats', error);
+      return false;
+    }
+  }
+
+  updateGameResult(won) {
+    const stats = this.loadStats();
+    stats.gamesPlayed += 1;
+    if (won) {
+      stats.gamesWon += 1;
+    } else {
+      stats.gamesLost += 1;
+    }
+    this.saveStats(stats);
+    return stats;
+  }
 }

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Profile - Space Scrap</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚢</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0a0f;
+            --text-primary: #e6e6ff;
+            --text-secondary: #9090b3;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: clamp(12px, 2vw, 16px);
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-secondary);
+            border-radius: 4px;
+        }
+
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+            padding: 0.8rem 1.5rem;
+            background-color: rgba(99, 102, 241, 0.2);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-family: inherit;
+            font-weight: 400;
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            border-radius: 4px;
+            border: 1px solid var(--accent-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: var(--accent-color);
+        }
+
+        .profile-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .profile-container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(20, 20, 30, 0.8);
+            border-radius: 12px;
+            padding: 2.5rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .profile-title {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 400;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .profile-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.1em;
+        }
+
+        .profile-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+            text-transform: lowercase;
+        }
+
+        .form-input {
+            padding: 1rem;
+            background-color: rgba(10, 10, 15, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .form-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .ship-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .ship-option {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            background-color: rgba(10, 10, 15, 0.8);
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .ship-option:hover {
+            border-color: var(--accent-color);
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+
+        .ship-option.selected {
+            border-color: var(--accent-color);
+            background-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .ship-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .ship-name {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background-color: rgba(10, 10, 15, 0.8);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .save-button, .reset-button {
+            flex: 1;
+            padding: 1rem 2rem;
+            background-color: var(--accent-color);
+            color: white;
+            text-decoration: none;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            text-transform: lowercase;
+        }
+
+        .save-button:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .reset-button {
+            background-color: rgba(239, 68, 68, 0.8);
+        }
+
+        .reset-button:hover {
+            background-color: rgba(220, 38, 38, 0.9);
+            transform: translateY(-2px);
+        }
+
+        .save-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 0.8rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            display: none;
+        }
+
+        .status-message.success {
+            display: block;
+            background-color: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #4ade80;
+        }
+
+        .status-message.error {
+            display: block;
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #f87171;
+        }
+
+        /* Background decoration */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.3;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 30%),
+                radial-gradient(circle at 60% 10%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 30% 90%, rgba(236, 72, 153, 0.05) 0%, transparent 40%);
+        }
+
+        /* Add starfield effect */
+        .bg-decoration::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+                radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 160px 30px, rgba(255,255,255,0.8), transparent);
+            background-repeat: repeat;
+            background-size: 200px 100px;
+            opacity: 0.4;
+            animation: twinkle 8s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Animations */
+        .profile-container {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .profile-container {
+                padding: 1.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .ship-selector {
+                flex-direction: column;
+            }
+
+            .back-button {
+                top: 0.5rem;
+                left: 0.5rem;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration"></div>
+
+    <div class="main-container">
+        <a href="index.html" class="back-button">← back</a>
+
+        <section class="profile-section">
+            <div class="profile-container">
+                <div class="profile-header">
+                    <h1 class="profile-title">Player Profile</h1>
+                    <p class="profile-subtitle">customize your space pilot</p>
+                </div>
+
+                <form class="profile-form" id="profileForm">
+                    <div class="form-group">
+                        <label for="nickname" class="form-label">nickname</label>
+                        <input
+                            type="text"
+                            id="nickname"
+                            class="form-input"
+                            placeholder="enter your callsign..."
+                            maxlength="20"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">preferred ship</label>
+                        <div class="ship-selector">
+                            <div class="ship-option" data-ship="red">
+                                <div class="ship-icon">🔴</div>
+                                <div class="ship-name">red</div>
+                            </div>
+                            <div class="ship-option" data-ship="blue">
+                                <div class="ship-icon">🔵</div>
+                                <div class="ship-name">blue</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">statistics</label>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="gamesPlayed">0</div>
+                                <div class="stat-label">games played</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="gamesWon">0</div>
+                                <div class="stat-label">games won</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="winRate">0%</div>
+                                <div class="stat-label">win rate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-message" id="statusMessage"></div>
+
+                    <div class="button-group">
+                        <button type="submit" class="save-button">save profile</button>
+                        <button type="button" class="reset-button" id="resetButton">reset stats</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="profile-app.js"></script>
+</body>
+</html>
