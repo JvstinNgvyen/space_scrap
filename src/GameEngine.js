@@ -12,10 +12,11 @@ export class GameEngine {
     this.canvas = null;
     this.clock = new THREE.Clock();
 
-    // Ship-related properties
-    this.redShip = null;
-    this.blueShip = null;
+    // Ship-related properties - now supporting 3 ships per team
+    this.redShips = []; // Array of 3 red ships
+    this.blueShips = []; // Array of 3 blue ships
     this.currentShip = null;
+    this.currentShipIndex = 0; // Which ship in the team is currently selected (0-2)
     this.transformControls = null;
     this.orbitControls = null;
     this.gltfLoader = new GLTFLoader();
@@ -27,7 +28,7 @@ export class GameEngine {
     // Multiplayer properties
     this.networkManager = null;
     this.isMultiplayer = false;
-    this.playerShip = null; // Which ship this player controls
+    this.playerShip = null; // Which ship this player controls ('red' or 'blue')
     this.isMyTurn = true; // Track if it's this player's turn (default true for single-player)
   }
 
@@ -376,8 +377,9 @@ export class GameEngine {
       this.findShipsInScene();
 
       // Setup Transform Controls for the first ship found
-      if (this.redShip || this.blueShip) {
-        this.currentShip = this.redShip || this.blueShip;
+      if (this.redShips.length > 0 || this.blueShips.length > 0) {
+        this.currentShip = this.redShips[0] || this.blueShips[0];
+        this.currentShipIndex = 0;
         this.setupTransformControls();
         console.log("Ship controls setup complete for:", this.currentShip.name);
       } else {
@@ -430,46 +432,89 @@ export class GameEngine {
       }
     });
 
-    // Keep only the first red ship, hide the duplicates
-    if (redShips.length > 1) {
-      console.log(
-        `Found ${redShips.length} red ships. Keeping first one, hiding duplicates.`
-      );
-      this.redShip = redShips[0];
+    // Process red ships - we want exactly 3
+    if (redShips.length > 0) {
+      console.log(`Found ${redShips.length} red ships. Target: 3 ships.`);
 
-      // Hide duplicate red ships
-      for (let i = 1; i < redShips.length; i++) {
-        console.log("Hiding duplicate red ship:", redShips[i].name);
+      // Keep up to 3 red ships, hide extras
+      for (let i = 0; i < Math.min(3, redShips.length); i++) {
+        this.redShips.push(redShips[i]);
+      }
+
+      // Hide any extra ships beyond 3
+      for (let i = 3; i < redShips.length; i++) {
+        console.log("Hiding extra red ship:", redShips[i].name);
         redShips[i].visible = false;
       }
-    } else {
-      this.redShip = redShips[0] || null;
+
+      // Clone ships if we have fewer than 3
+      while (this.redShips.length < 3) {
+        const template = this.redShips[0];
+        const clone = template.clone();
+        clone.name = `${template.name}_clone_${this.redShips.length}`;
+
+        // Position clones slightly offset from each other
+        const offset = this.redShips.length * 2;
+        clone.position.set(
+          template.position.x + offset,
+          template.position.y,
+          template.position.z
+        );
+
+        this.scene.add(clone);
+        this.redShips.push(clone);
+        console.log(`Created red ship clone ${this.redShips.length}:`, clone.name);
+      }
     }
 
-    // Keep only the first blue ship, hide the duplicates
-    if (blueShips.length > 1) {
-      console.log(
-        `Found ${blueShips.length} blue ships. Keeping first one, hiding duplicates.`
-      );
-      this.blueShip = blueShips[0];
+    // Process blue ships - we want exactly 3
+    if (blueShips.length > 0) {
+      console.log(`Found ${blueShips.length} blue ships. Target: 3 ships.`);
 
-      // Hide duplicate blue ships
-      for (let i = 1; i < blueShips.length; i++) {
-        console.log("Hiding duplicate blue ship:", blueShips[i].name);
+      // Keep up to 3 blue ships, hide extras
+      for (let i = 0; i < Math.min(3, blueShips.length); i++) {
+        this.blueShips.push(blueShips[i]);
+      }
+
+      // Hide any extra ships beyond 3
+      for (let i = 3; i < blueShips.length; i++) {
+        console.log("Hiding extra blue ship:", blueShips[i].name);
         blueShips[i].visible = false;
       }
-    } else {
-      this.blueShip = blueShips[0] || null;
+
+      // Clone ships if we have fewer than 3
+      while (this.blueShips.length < 3) {
+        const template = this.blueShips[0];
+        const clone = template.clone();
+        clone.name = `${template.name}_clone_${this.blueShips.length}`;
+
+        // Position clones slightly offset from each other
+        const offset = this.blueShips.length * 2;
+        clone.position.set(
+          template.position.x + offset,
+          template.position.y,
+          template.position.z
+        );
+
+        this.scene.add(clone);
+        this.blueShips.push(clone);
+        console.log(`Created blue ship clone ${this.blueShips.length}:`, clone.name);
+      }
     }
 
-    if (!this.redShip && !this.blueShip) {
+    if (this.redShips.length === 0 && this.blueShips.length === 0) {
       console.log("No ships found by name. Searching by material color...");
       this.findShipsByMaterial();
     }
+
+    console.log(`Ship setup complete: ${this.redShips.length} red ships, ${this.blueShips.length} blue ships`);
   }
 
   findShipsByMaterial() {
     // Alternative approach: find ships by material color
+    const redShipsByMaterial = [];
+    const blueShipsByMaterial = [];
+
     this.scene.traverse((object) => {
       if (object.isMesh && object.material) {
         const material = Array.isArray(object.material)
@@ -483,12 +528,15 @@ export class GameEngine {
             material.color.g < 0.3 &&
             material.color.b < 0.3
           ) {
-            this.redShip = object.parent || object;
-            console.log(
-              "Found red ship by material:",
-              object.name || "unnamed",
-              object
-            );
+            const ship = object.parent || object;
+            if (!redShipsByMaterial.includes(ship)) {
+              redShipsByMaterial.push(ship);
+              console.log(
+                "Found red ship by material:",
+                object.name || "unnamed",
+                object
+              );
+            }
           }
 
           // Check if material is blue-ish
@@ -497,16 +545,70 @@ export class GameEngine {
             material.color.r < 0.3 &&
             material.color.g < 0.3
           ) {
-            this.blueShip = object.parent || object;
-            console.log(
-              "Found blue ship by material:",
-              object.name || "unnamed",
-              object
-            );
+            const ship = object.parent || object;
+            if (!blueShipsByMaterial.includes(ship)) {
+              blueShipsByMaterial.push(ship);
+              console.log(
+                "Found blue ship by material:",
+                object.name || "unnamed",
+                object
+              );
+            }
           }
         }
       }
     });
+
+    // Process found ships - we want exactly 3 per team
+    if (redShipsByMaterial.length > 0) {
+      // Keep up to 3 red ships
+      for (let i = 0; i < Math.min(3, redShipsByMaterial.length); i++) {
+        this.redShips.push(redShipsByMaterial[i]);
+      }
+
+      // Clone ships if we have fewer than 3
+      while (this.redShips.length < 3) {
+        const template = this.redShips[0];
+        const clone = template.clone();
+        clone.name = `red_ship_clone_${this.redShips.length}`;
+
+        const offset = this.redShips.length * 2;
+        clone.position.set(
+          template.position.x + offset,
+          template.position.y,
+          template.position.z
+        );
+
+        this.scene.add(clone);
+        this.redShips.push(clone);
+        console.log(`Created red ship clone ${this.redShips.length}:`, clone.name);
+      }
+    }
+
+    if (blueShipsByMaterial.length > 0) {
+      // Keep up to 3 blue ships
+      for (let i = 0; i < Math.min(3, blueShipsByMaterial.length); i++) {
+        this.blueShips.push(blueShipsByMaterial[i]);
+      }
+
+      // Clone ships if we have fewer than 3
+      while (this.blueShips.length < 3) {
+        const template = this.blueShips[0];
+        const clone = template.clone();
+        clone.name = `blue_ship_clone_${this.blueShips.length}`;
+
+        const offset = this.blueShips.length * 2;
+        clone.position.set(
+          template.position.x + offset,
+          template.position.y,
+          template.position.z
+        );
+
+        this.scene.add(clone);
+        this.blueShips.push(clone);
+        console.log(`Created blue ship clone ${this.blueShips.length}:`, clone.name);
+      }
+    }
   }
 
   setupTransformControls() {
@@ -559,8 +661,9 @@ export class GameEngine {
 
       // Send ship update to network if in multiplayer mode
       if (this.isMultiplayer && this.networkManager && this.currentShip) {
-        const shipType = this.currentShip === this.redShip ? 'red' : 'blue';
-        this.sendShipUpdate(shipType);
+        // Determine which team this ship belongs to
+        const shipType = this.redShips.includes(this.currentShip) ? 'red' : 'blue';
+        this.sendShipUpdate(shipType, this.currentShipIndex);
       }
     });
 
@@ -626,37 +729,53 @@ export class GameEngine {
     }
   }
 
-  // Method to switch between ships
+  // Method to switch between ships - cycles through ships in the team
   switchToRedShip() {
-    if (this.redShip) {
-      // In multiplayer, only allow switching to assigned ship
-      if (this.isMultiplayer && this.playerShip && this.playerShip !== 'red') {
-        console.log("Cannot switch to red ship - not assigned to you");
-        return;
-      }
+    if (this.redShips.length === 0) return;
 
-      this.currentShip = this.redShip;
-      if (this.transformControls) {
-        this.transformControls.attach(this.currentShip);
-      }
-      console.log("Switched to red ship");
+    // In multiplayer, only allow switching to assigned ship
+    if (this.isMultiplayer && this.playerShip && this.playerShip !== 'red') {
+      console.log("Cannot switch to red ship - not assigned to you");
+      return;
     }
+
+    // If already on red team, cycle to next red ship
+    if (this.redShips.includes(this.currentShip)) {
+      this.currentShipIndex = (this.currentShipIndex + 1) % this.redShips.length;
+    } else {
+      // Switching from blue to red team
+      this.currentShipIndex = 0;
+    }
+
+    this.currentShip = this.redShips[this.currentShipIndex];
+    if (this.transformControls) {
+      this.transformControls.attach(this.currentShip);
+    }
+    console.log(`Switched to red ship ${this.currentShipIndex + 1}/${this.redShips.length}:`, this.currentShip.name);
   }
 
   switchToBlueShip() {
-    if (this.blueShip) {
-      // In multiplayer, only allow switching to assigned ship
-      if (this.isMultiplayer && this.playerShip && this.playerShip !== 'blue') {
-        console.log("Cannot switch to blue ship - not assigned to you");
-        return;
-      }
+    if (this.blueShips.length === 0) return;
 
-      this.currentShip = this.blueShip;
-      if (this.transformControls) {
-        this.transformControls.attach(this.currentShip);
-      }
-      console.log("Switched to blue ship");
+    // In multiplayer, only allow switching to assigned ship
+    if (this.isMultiplayer && this.playerShip && this.playerShip !== 'blue') {
+      console.log("Cannot switch to blue ship - not assigned to you");
+      return;
     }
+
+    // If already on blue team, cycle to next blue ship
+    if (this.blueShips.includes(this.currentShip)) {
+      this.currentShipIndex = (this.currentShipIndex + 1) % this.blueShips.length;
+    } else {
+      // Switching from red to blue team
+      this.currentShipIndex = 0;
+    }
+
+    this.currentShip = this.blueShips[this.currentShipIndex];
+    if (this.transformControls) {
+      this.transformControls.attach(this.currentShip);
+    }
+    console.log(`Switched to blue ship ${this.currentShipIndex + 1}/${this.blueShips.length}:`, this.currentShip.name);
   }
 
   start() {
@@ -751,11 +870,18 @@ export class GameEngine {
   getShip() {
     return this.currentShip;
   }
+  getRedShips() {
+    return this.redShips;
+  }
+  getBlueShips() {
+    return this.blueShips;
+  }
+  // Legacy methods for backward compatibility
   getRedShip() {
-    return this.redShip;
+    return this.redShips[0] || null;
   }
   getBlueShip() {
-    return this.blueShip;
+    return this.blueShips[0] || null;
   }
   getTransformControls() {
     return this.transformControls;
@@ -797,7 +923,7 @@ export class GameEngine {
 
     // Setup network callbacks
     this.networkManager.onShipUpdated((data) => {
-      this.applyRemoteShipUpdate(data.ship, data.transform);
+      this.applyRemoteShipUpdate(data.ship, data.shipIndex, data.transform);
     });
 
     // NOTE: We don't set up onTurnChanged here because it would overwrite
@@ -862,10 +988,11 @@ export class GameEngine {
     this.updateControlsForTurn();
   }
 
-  sendShipUpdate(shipType) {
+  sendShipUpdate(shipType, shipIndex) {
     if (!this.networkManager || !this.isMultiplayer) return;
 
-    const ship = shipType === 'red' ? this.redShip : this.blueShip;
+    const ships = shipType === 'red' ? this.redShips : this.blueShips;
+    const ship = ships[shipIndex];
     if (!ship) return;
 
     const transform = {
@@ -886,11 +1013,12 @@ export class GameEngine {
       }
     };
 
-    this.networkManager.sendShipUpdate(shipType, transform);
+    this.networkManager.sendShipUpdate(shipType, shipIndex, transform);
   }
 
-  applyRemoteShipUpdate(shipType, transform) {
-    const ship = shipType === 'red' ? this.redShip : this.blueShip;
+  applyRemoteShipUpdate(shipType, shipIndex, transform) {
+    const ships = shipType === 'red' ? this.redShips : this.blueShips;
+    const ship = ships[shipIndex];
     if (!ship || !transform) return;
 
     // Don't apply updates to the ship we control

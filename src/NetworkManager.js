@@ -237,7 +237,7 @@ export class NetworkManager {
     return true;
   }
 
-  sendShipUpdate(ship, transform) {
+  sendShipUpdate(ship, shipIndex, transform) {
     if (!this.socket || !this.isConnected || !this.roomId) {
       return;
     }
@@ -250,6 +250,7 @@ export class NetworkManager {
     this.socket.emit('ship-update', {
       roomId: this.roomId,
       ship,
+      shipIndex,
       transform
     });
   }

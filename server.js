@@ -35,7 +35,7 @@ const DISCONNECTION_GRACE_PERIOD = 60000;
 // {
 //   id: string,
 //   players: [{ id, ship, nickname, connected, disconnectedAt }],
-//   gameState: { redShip: {}, blueShip: {} },
+//   gameState: { redShips: [{}, {}, {}], blueShips: [{}, {}, {}] },
 //   currentTurn: 'red' | 'blue',
 //   turnNumber: number
 // }
@@ -58,8 +58,16 @@ io.on('connection', (socket) => {
         disconnectedAt: null
       }],
       gameState: {
-        redShip: { position: null, rotation: null, scale: null },
-        blueShip: { position: null, rotation: null, scale: null }
+        redShips: [
+          { position: null, rotation: null, scale: null },
+          { position: null, rotation: null, scale: null },
+          { position: null, rotation: null, scale: null }
+        ],
+        blueShips: [
+          { position: null, rotation: null, scale: null },
+          { position: null, rotation: null, scale: null },
+          { position: null, rotation: null, scale: null }
+        ]
       },
       currentTurn: 'red', // Red player (creator) starts first
       turnNumber: 1
@@ -128,7 +136,7 @@ io.on('connection', (socket) => {
 
   // Handle ship transformation updates
   socket.on('ship-update', (data) => {
-    const { roomId, ship, transform } = data;
+    const { roomId, ship, shipIndex, transform } = data;
     const room = rooms.get(roomId);
 
     if (!room) return;
@@ -143,16 +151,23 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Validate ship index
+    if (shipIndex < 0 || shipIndex > 2) {
+      socket.emit('error', { message: 'Invalid ship index' });
+      return;
+    }
+
     // Update game state
     if (ship === 'red') {
-      room.gameState.redShip = transform;
+      room.gameState.redShips[shipIndex] = transform;
     } else if (ship === 'blue') {
-      room.gameState.blueShip = transform;
+      room.gameState.blueShips[shipIndex] = transform;
     }
 
     // Broadcast to other players in the room
     socket.to(roomId).emit('ship-updated', {
       ship,
+      shipIndex,
       transform
     });
   });
