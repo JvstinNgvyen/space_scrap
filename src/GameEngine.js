@@ -453,17 +453,26 @@ export class GameEngine {
         const clone = template.clone();
         clone.name = `${template.name}_clone_${this.redShips.length}`;
 
-        // Position clones slightly offset from each other
-        const offset = this.redShips.length * 2;
-        clone.position.set(
-          template.position.x + offset,
-          template.position.y,
-          template.position.z
-        );
-
         this.scene.add(clone);
         this.redShips.push(clone);
         console.log(`Created red ship clone ${this.redShips.length}:`, clone.name);
+      }
+
+      // Position red ships at left side corners of the board
+      // Red team positions: left side of board
+      const redPositions = [
+        { x: -8, y: 0, z: -8 },  // Ship 1: Bottom left
+        { x: -8, y: 0, z: 0 },   // Ship 2: Left middle
+        { x: -8, y: 0, z: 8 }    // Ship 3: Top left
+      ];
+
+      for (let i = 0; i < this.redShips.length; i++) {
+        this.redShips[i].position.set(
+          redPositions[i].x,
+          redPositions[i].y,
+          redPositions[i].z
+        );
+        console.log(`Positioned red ship ${i + 1} at:`, redPositions[i]);
       }
     }
 
@@ -488,17 +497,26 @@ export class GameEngine {
         const clone = template.clone();
         clone.name = `${template.name}_clone_${this.blueShips.length}`;
 
-        // Position clones slightly offset from each other
-        const offset = this.blueShips.length * 2;
-        clone.position.set(
-          template.position.x + offset,
-          template.position.y,
-          template.position.z
-        );
-
         this.scene.add(clone);
         this.blueShips.push(clone);
         console.log(`Created blue ship clone ${this.blueShips.length}:`, clone.name);
+      }
+
+      // Position blue ships at right side corners of the board
+      // Blue team positions: right side of board
+      const bluePositions = [
+        { x: 8, y: 0, z: -8 },  // Ship 1: Bottom right
+        { x: 8, y: 0, z: 0 },   // Ship 2: Right middle
+        { x: 8, y: 0, z: 8 }    // Ship 3: Top right
+      ];
+
+      for (let i = 0; i < this.blueShips.length; i++) {
+        this.blueShips[i].position.set(
+          bluePositions[i].x,
+          bluePositions[i].y,
+          bluePositions[i].z
+        );
+        console.log(`Positioned blue ship ${i + 1} at:`, bluePositions[i]);
       }
     }
 
@@ -572,16 +590,25 @@ export class GameEngine {
         const clone = template.clone();
         clone.name = `red_ship_clone_${this.redShips.length}`;
 
-        const offset = this.redShips.length * 2;
-        clone.position.set(
-          template.position.x + offset,
-          template.position.y,
-          template.position.z
-        );
-
         this.scene.add(clone);
         this.redShips.push(clone);
         console.log(`Created red ship clone ${this.redShips.length}:`, clone.name);
+      }
+
+      // Position red ships at left side corners of the board
+      const redPositions = [
+        { x: -8, y: 0, z: -8 },  // Ship 1: Bottom left
+        { x: -8, y: 0, z: 0 },   // Ship 2: Left middle
+        { x: -8, y: 0, z: 8 }    // Ship 3: Top left
+      ];
+
+      for (let i = 0; i < this.redShips.length; i++) {
+        this.redShips[i].position.set(
+          redPositions[i].x,
+          redPositions[i].y,
+          redPositions[i].z
+        );
+        console.log(`Positioned red ship ${i + 1} at:`, redPositions[i]);
       }
     }
 
@@ -597,16 +624,25 @@ export class GameEngine {
         const clone = template.clone();
         clone.name = `blue_ship_clone_${this.blueShips.length}`;
 
-        const offset = this.blueShips.length * 2;
-        clone.position.set(
-          template.position.x + offset,
-          template.position.y,
-          template.position.z
-        );
-
         this.scene.add(clone);
         this.blueShips.push(clone);
         console.log(`Created blue ship clone ${this.blueShips.length}:`, clone.name);
+      }
+
+      // Position blue ships at right side corners of the board
+      const bluePositions = [
+        { x: 8, y: 0, z: -8 },  // Ship 1: Bottom right
+        { x: 8, y: 0, z: 0 },   // Ship 2: Right middle
+        { x: 8, y: 0, z: 8 }    // Ship 3: Top right
+      ];
+
+      for (let i = 0; i < this.blueShips.length; i++) {
+        this.blueShips[i].position.set(
+          bluePositions[i].x,
+          bluePositions[i].y,
+          bluePositions[i].z
+        );
+        console.log(`Positioned blue ship ${i + 1} at:`, bluePositions[i]);
       }
     }
   }
