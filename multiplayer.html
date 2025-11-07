@@ -516,6 +516,93 @@
             background: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
         }
+
+        /* Dice Panel */
+        #dice-panel {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--accent-color);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 100;
+            min-width: 250px;
+            text-align: center;
+        }
+
+        #dice-panel h3 {
+            margin: 0 0 15px 0;
+            color: var(--accent-color);
+            font-size: 16px;
+            letter-spacing: 0.1em;
+        }
+
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .die {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        .die.rolling {
+            animation: roll 0.5s ease-in-out;
+        }
+
+        @keyframes roll {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+        }
+
+        #roll-dice-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        #roll-dice-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        #roll-dice-btn:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .dice-total {
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -572,6 +659,16 @@
 
     <!-- Game UI -->
     <div id="game-ui">
+        <div id="dice-panel">
+            <h3>Dice Roll</h3>
+            <div class="dice-container">
+                <div class="die" id="die1">1</div>
+                <div class="die" id="die2">1</div>
+            </div>
+            <button id="roll-dice-btn" disabled>Roll Dice</button>
+            <div class="dice-total">Total: <span id="dice-total">2</span></div>
+        </div>
+
         <div id="controls">
             <h3>Ship Controls</h3>
             <div><span class="key">G</span> - Translate Mode</div>
