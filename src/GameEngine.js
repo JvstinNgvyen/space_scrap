@@ -31,10 +31,10 @@ export class GameEngine {
     this.isMyTurn = true; // Track if it's this player's turn (default true for single-player)
 
     // Black hole properties
-    this.blackHoles = []; // Array to store black hole objects
-    this.blackHoleCollisionRadius = 1.5; // Collision radius for black holes
-    this.lastTeleportTime = 0; // Cooldown for teleportation
-    this.teleportCooldown = 1000; // Minimum time between teleports (ms)
+    // this.blackHoles = []; // Array to store black hole objects
+    // this.blackHoleCollisionRadius = 1.5; // Collision radius for black holes
+    // this.lastTeleportTime = 0; // Cooldown for teleportation
+    // this.teleportCooldown = 1000; // Minimum time between teleports (ms)
   }
 
   async init() {
@@ -59,7 +59,7 @@ export class GameEngine {
       this.setupTransformKeyboards();
 
       // Spawn black holes after scene is loaded
-      this.spawnBlackHoles();
+      // this.spawnBlackHoles();
 
       console.log("GameEngine initialized successfully");
     } catch (error) {
@@ -601,231 +601,231 @@ export class GameEngine {
   }
 
   // Black Hole Methods
-  createBlackHole(position) {
-    // Create black hole group to hold all visual elements
-    const blackHoleGroup = new THREE.Group();
-    blackHoleGroup.position.copy(position);
+  // createBlackHole(position) {
+  //   // Create black hole group to hold all visual elements
+  //   const blackHoleGroup = new THREE.Group();
+  //   blackHoleGroup.position.copy(position);
 
-    // Create the main black hole sphere (event horizon)
-    const blackHoleGeometry = new THREE.SphereGeometry(1.2, 32, 32);
-    const blackHoleMaterial = new THREE.MeshStandardMaterial({
-      color: 0x000000,
-      emissive: 0x1a0033,
-      emissiveIntensity: 2,
-      metalness: 1,
-      roughness: 0.2,
-    });
-    const blackHoleMesh = new THREE.Mesh(blackHoleGeometry, blackHoleMaterial);
-    blackHoleGroup.add(blackHoleMesh);
+  //   // Create the main black hole sphere (event horizon)
+  //   const blackHoleGeometry = new THREE.SphereGeometry(1.2, 32, 32);
+  //   const blackHoleMaterial = new THREE.MeshStandardMaterial({
+  //     color: 0x000000,
+  //     emissive: 0x1a0033,
+  //     emissiveIntensity: 2,
+  //     metalness: 1,
+  //     roughness: 0.2,
+  //   });
+  //   const blackHoleMesh = new THREE.Mesh(blackHoleGeometry, blackHoleMaterial);
+  //   blackHoleGroup.add(blackHoleMesh);
 
-    // Create accretion disk (glowing ring around black hole)
-    const diskGeometry = new THREE.TorusGeometry(1.8, 0.3, 16, 100);
-    const diskMaterial = new THREE.MeshStandardMaterial({
-      color: 0xff6600,
-      emissive: 0xff3300,
-      emissiveIntensity: 3,
-      transparent: true,
-      opacity: 0.7,
-      side: THREE.DoubleSide,
-    });
-    const diskMesh = new THREE.Mesh(diskGeometry, diskMaterial);
-    diskMesh.rotation.x = Math.PI / 2; // Make it horizontal
-    blackHoleGroup.add(diskMesh);
+  //   // Create accretion disk (glowing ring around black hole)
+  //   const diskGeometry = new THREE.TorusGeometry(1.8, 0.3, 16, 100);
+  //   const diskMaterial = new THREE.MeshStandardMaterial({
+  //     color: 0xff6600,
+  //     emissive: 0xff3300,
+  //     emissiveIntensity: 3,
+  //     transparent: true,
+  //     opacity: 0.7,
+  //     side: THREE.DoubleSide,
+  //   });
+  //   const diskMesh = new THREE.Mesh(diskGeometry, diskMaterial);
+  //   diskMesh.rotation.x = Math.PI / 2; // Make it horizontal
+  //   blackHoleGroup.add(diskMesh);
 
-    // Create outer glow effect
-    const glowGeometry = new THREE.SphereGeometry(2, 32, 32);
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color: 0x6600ff,
-      transparent: true,
-      opacity: 0.3,
-      side: THREE.BackSide,
-    });
-    const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-    blackHoleGroup.add(glowMesh);
+  //   // Create outer glow effect
+  //   const glowGeometry = new THREE.SphereGeometry(2, 32, 32);
+  //   const glowMaterial = new THREE.MeshBasicMaterial({
+  //     color: 0x6600ff,
+  //     transparent: true,
+  //     opacity: 0.3,
+  //     side: THREE.BackSide,
+  //   });
+  //   const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+  //   blackHoleGroup.add(glowMesh);
 
-    // Add point light for dramatic effect
-    const blackHoleLight = new THREE.PointLight(0x6600ff, 2, 10);
-    blackHoleLight.position.set(0, 0, 0);
-    blackHoleGroup.add(blackHoleLight);
+  //   // Add point light for dramatic effect
+  //   const blackHoleLight = new THREE.PointLight(0x6600ff, 2, 10);
+  //   blackHoleLight.position.set(0, 0, 0);
+  //   blackHoleGroup.add(blackHoleLight);
 
-    // Store references for animation
-    blackHoleGroup.userData.disk = diskMesh;
-    blackHoleGroup.userData.glow = glowMesh;
-    blackHoleGroup.userData.core = blackHoleMesh;
+  //   // Store references for animation
+  //   blackHoleGroup.userData.disk = diskMesh;
+  //   blackHoleGroup.userData.glow = glowMesh;
+  //   blackHoleGroup.userData.core = blackHoleMesh;
 
-    // Add to scene
-    this.scene.add(blackHoleGroup);
-    this.blackHoles.push(blackHoleGroup);
+  //   // Add to scene
+  //   this.scene.add(blackHoleGroup);
+  //   this.blackHoles.push(blackHoleGroup);
 
-    console.log("Black hole created at:", position);
-    return blackHoleGroup;
-  }
+  //   console.log("Black hole created at:", position);
+  //   return blackHoleGroup;
+  // }
 
-  spawnBlackHoles() {
-    // Spawn 2-4 black holes randomly on the board
-    const numBlackHoles = Math.floor(Math.random() * 3) + 2; // 2-4 black holes
+  // spawnBlackHoles() {
+  //   // Spawn 2-4 black holes randomly on the board
+  //   const numBlackHoles = Math.floor(Math.random() * 3) + 2; // 2-4 black holes
 
-    console.log(`Spawning ${numBlackHoles} black holes...`);
+  //   console.log(`Spawning ${numBlackHoles} black holes...`);
 
-    for (let i = 0; i < numBlackHoles; i++) {
-      // Random position on the board (within reasonable bounds)
-      const x = (Math.random() - 0.5) * 20; // -10 to 10
-      const y = 2; // Above the board
-      const z = (Math.random() - 0.5) * 20; // -10 to 10
+  //   for (let i = 0; i < numBlackHoles; i++) {
+  //     // Random position on the board (within reasonable bounds)
+  //     const x = (Math.random() - 0.5) * 20; // -10 to 10
+  //     const y = 2; // Above the board
+  //     const z = (Math.random() - 0.5) * 20; // -10 to 10
 
-      const position = new THREE.Vector3(x, y, z);
-      this.createBlackHole(position);
-    }
-  }
+  //     const position = new THREE.Vector3(x, y, z);
+  //     this.createBlackHole(position);
+  //   }
+  // }
 
-  checkBlackHoleCollisions() {
-    if (!this.currentShip || this.blackHoles.length === 0) return;
+  // checkBlackHoleCollisions() {
+  //   if (!this.currentShip || this.blackHoles.length === 0) return;
 
-    const currentTime = Date.now();
+  //   const currentTime = Date.now();
 
-    // Check cooldown
-    if (currentTime - this.lastTeleportTime < this.teleportCooldown) {
-      return;
-    }
+  //   // Check cooldown
+  //   if (currentTime - this.lastTeleportTime < this.teleportCooldown) {
+  //     return;
+  //   }
 
-    const shipPosition = this.currentShip.position;
+  //   const shipPosition = this.currentShip.position;
 
-    // Check each black hole for collision
-    for (const blackHole of this.blackHoles) {
-      const blackHolePosition = blackHole.position;
-      const distance = shipPosition.distanceTo(blackHolePosition);
+  //   // Check each black hole for collision
+  //   for (const blackHole of this.blackHoles) {
+  //     const blackHolePosition = blackHole.position;
+  //     const distance = shipPosition.distanceTo(blackHolePosition);
 
-      // If ship is within collision radius, teleport it
-      if (distance < this.blackHoleCollisionRadius) {
-        console.log("Ship entered black hole! Teleporting...");
-        this.teleportShip(this.currentShip);
-        this.lastTeleportTime = currentTime;
+  //     // If ship is within collision radius, teleport it
+  //     if (distance < this.blackHoleCollisionRadius) {
+  //       console.log("Ship entered black hole! Teleporting...");
+  //       this.teleportShip(this.currentShip);
+  //       this.lastTeleportTime = currentTime;
 
-        // Visual feedback: make the black hole pulse
-        this.pulseBlackHole(blackHole);
-        break; // Only teleport once per frame
-      }
-    }
-  }
+  //       // Visual feedback: make the black hole pulse
+  //       this.pulseBlackHole(blackHole);
+  //       break; // Only teleport once per frame
+  //     }
+  //   }
+  // }
 
-  teleportShip(ship) {
-    if (!ship) return;
+  // teleportShip(ship) {
+  //   if (!ship) return;
 
-    // Generate random teleport destination on the board
-    const newX = (Math.random() - 0.5) * 18; // -9 to 9 (slightly smaller than board)
-    const newY = ship.position.y; // Keep same height
-    const newZ = (Math.random() - 0.5) * 18; // -9 to 9
+  //   // Generate random teleport destination on the board
+  //   const newX = (Math.random() - 0.5) * 18; // -9 to 9 (slightly smaller than board)
+  //   const newY = ship.position.y; // Keep same height
+  //   const newZ = (Math.random() - 0.5) * 18; // -9 to 9
 
-    const oldPosition = ship.position.clone();
+  //   const oldPosition = ship.position.clone();
 
-    // Teleport the ship
-    ship.position.set(newX, newY, newZ);
+  //   // Teleport the ship
+  //   ship.position.set(newX, newY, newZ);
 
-    console.log(`Ship teleported from (${oldPosition.x.toFixed(2)}, ${oldPosition.y.toFixed(2)}, ${oldPosition.z.toFixed(2)}) to (${newX.toFixed(2)}, ${newY.toFixed(2)}, ${newZ.toFixed(2)})`);
+  //   console.log(`Ship teleported from (${oldPosition.x.toFixed(2)}, ${oldPosition.y.toFixed(2)}, ${oldPosition.z.toFixed(2)}) to (${newX.toFixed(2)}, ${newY.toFixed(2)}, ${newZ.toFixed(2)})`);
 
-    // Send update to network if in multiplayer mode
-    if (this.isMultiplayer && this.networkManager && this.currentShip) {
-      const shipType = this.currentShip === this.redShip ? 'red' : 'blue';
-      this.sendShipUpdate(shipType);
-    }
+  //   // Send update to network if in multiplayer mode
+  //   if (this.isMultiplayer && this.networkManager && this.currentShip) {
+  //     const shipType = this.currentShip === this.redShip ? 'red' : 'blue';
+  //     this.sendShipUpdate(shipType);
+  //   }
 
-    // Visual feedback - flash effect
-    this.createTeleportEffect(oldPosition);
-    this.createTeleportEffect(ship.position);
-  }
+  //   // Visual feedback - flash effect
+  //   this.createTeleportEffect(oldPosition);
+  //   this.createTeleportEffect(ship.position);
+  // }
 
-  pulseBlackHole(blackHole) {
-    // Animate the black hole to pulse when a ship enters it
-    const disk = blackHole.userData.disk;
-    const glow = blackHole.userData.glow;
+  // pulseBlackHole(blackHole) {
+  //   // Animate the black hole to pulse when a ship enters it
+  //   const disk = blackHole.userData.disk;
+  //   const glow = blackHole.userData.glow;
 
-    if (disk && glow) {
-      const originalDiskScale = disk.scale.clone();
-      const originalGlowScale = glow.scale.clone();
+  //   if (disk && glow) {
+  //     const originalDiskScale = disk.scale.clone();
+  //     const originalGlowScale = glow.scale.clone();
 
-      // Quick pulse animation
-      const pulseDuration = 300;
-      const startTime = Date.now();
+  //     // Quick pulse animation
+  //     const pulseDuration = 300;
+  //     const startTime = Date.now();
 
-      const animatePulse = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / pulseDuration, 1);
+  //     const animatePulse = () => {
+  //       const elapsed = Date.now() - startTime;
+  //       const progress = Math.min(elapsed / pulseDuration, 1);
 
-        // Pulse effect using sine wave
-        const scale = 1 + Math.sin(progress * Math.PI) * 0.5;
+  //       // Pulse effect using sine wave
+  //       const scale = 1 + Math.sin(progress * Math.PI) * 0.5;
 
-        disk.scale.copy(originalDiskScale).multiplyScalar(scale);
-        glow.scale.copy(originalGlowScale).multiplyScalar(scale);
+  //       disk.scale.copy(originalDiskScale).multiplyScalar(scale);
+  //       glow.scale.copy(originalGlowScale).multiplyScalar(scale);
 
-        if (progress < 1) {
-          requestAnimationFrame(animatePulse);
-        } else {
-          // Reset to original scale
-          disk.scale.copy(originalDiskScale);
-          glow.scale.copy(originalGlowScale);
-        }
-      };
+  //       if (progress < 1) {
+  //         requestAnimationFrame(animatePulse);
+  //       } else {
+  //         // Reset to original scale
+  //         disk.scale.copy(originalDiskScale);
+  //         glow.scale.copy(originalGlowScale);
+  //       }
+  //     };
 
-      animatePulse();
-    }
-  }
+  //     animatePulse();
+  //   }
+  // }
 
-  createTeleportEffect(position) {
-    // Create a particle burst effect at teleport location
-    const particleCount = 20;
-    const particles = new THREE.Group();
+  // createTeleportEffect(position) {
+  //   // Create a particle burst effect at teleport location
+  //   const particleCount = 20;
+  //   const particles = new THREE.Group();
 
-    for (let i = 0; i < particleCount; i++) {
-      const particleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-      const particleMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ffff,
-        transparent: true,
-        opacity: 1,
-      });
-      const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+  //   for (let i = 0; i < particleCount; i++) {
+  //     const particleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+  //     const particleMaterial = new THREE.MeshBasicMaterial({
+  //       color: 0x00ffff,
+  //       transparent: true,
+  //       opacity: 1,
+  //     });
+  //     const particle = new THREE.Mesh(particleGeometry, particleMaterial);
 
-      // Random direction
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.random() * Math.PI;
+  //     // Random direction
+  //     const theta = Math.random() * Math.PI * 2;
+  //     const phi = Math.random() * Math.PI;
 
-      particle.userData.velocity = new THREE.Vector3(
-        Math.sin(phi) * Math.cos(theta) * 0.2,
-        Math.sin(phi) * Math.sin(theta) * 0.2,
-        Math.cos(phi) * 0.2
-      );
+  //     particle.userData.velocity = new THREE.Vector3(
+  //       Math.sin(phi) * Math.cos(theta) * 0.2,
+  //       Math.sin(phi) * Math.sin(theta) * 0.2,
+  //       Math.cos(phi) * 0.2
+  //     );
 
-      particle.position.copy(position);
-      particles.add(particle);
-    }
+  //     particle.position.copy(position);
+  //     particles.add(particle);
+  //   }
 
-    this.scene.add(particles);
+  //   this.scene.add(particles);
 
-    // Animate particles
-    const startTime = Date.now();
-    const duration = 1000;
+  //   // Animate particles
+  //   const startTime = Date.now();
+  //   const duration = 1000;
 
-    const animateParticles = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = elapsed / duration;
+  //   const animateParticles = () => {
+  //     const elapsed = Date.now() - startTime;
+  //     const progress = elapsed / duration;
 
-      if (progress < 1) {
-        particles.children.forEach(particle => {
-          particle.position.add(particle.userData.velocity);
-          particle.material.opacity = 1 - progress;
-        });
-        requestAnimationFrame(animateParticles);
-      } else {
-        // Clean up
-        this.scene.remove(particles);
-        particles.children.forEach(particle => {
-          particle.geometry.dispose();
-          particle.material.dispose();
-        });
-      }
-    };
+  //     if (progress < 1) {
+  //       particles.children.forEach(particle => {
+  //         particle.position.add(particle.userData.velocity);
+  //         particle.material.opacity = 1 - progress;
+  //       });
+  //       requestAnimationFrame(animateParticles);
+  //     } else {
+  //       // Clean up
+  //       this.scene.remove(particles);
+  //       particles.children.forEach(particle => {
+  //         particle.geometry.dispose();
+  //         particle.material.dispose();
+  //       });
+  //     }
+  //   };
 
-    animateParticles();
-  }
+  //   animateParticles();
+  // }
 
   onTransformKeyDown(event) {
     if (!this.transformControls) return;
@@ -931,27 +931,27 @@ export class GameEngine {
     }
 
     // Animate black holes
-    const time = this.clock.getElapsedTime();
-    this.blackHoles.forEach(blackHole => {
-      // Rotate the accretion disk
-      if (blackHole.userData.disk) {
-        blackHole.userData.disk.rotation.z = time * 2;
-      }
+    // const time = this.clock.getElapsedTime();
+    // this.blackHoles.forEach(blackHole => {
+    //   // Rotate the accretion disk
+    //   if (blackHole.userData.disk) {
+    //     blackHole.userData.disk.rotation.z = time * 2;
+    //   }
 
-      // Pulsate the glow
-      if (blackHole.userData.glow) {
-        const pulse = Math.sin(time * 3) * 0.15 + 1;
-        blackHole.userData.glow.scale.setScalar(pulse);
-      }
+    //   // Pulsate the glow
+    //   if (blackHole.userData.glow) {
+    //     const pulse = Math.sin(time * 3) * 0.15 + 1;
+    //     blackHole.userData.glow.scale.setScalar(pulse);
+    //   }
 
-      // Rotate the core slowly
-      if (blackHole.userData.core) {
-        blackHole.userData.core.rotation.y = time * 0.5;
-      }
-    });
+    //   // Rotate the core slowly
+    //   if (blackHole.userData.core) {
+    //     blackHole.userData.core.rotation.y = time * 0.5;
+    //   }
+    // });
 
     // Check for black hole collisions
-    this.checkBlackHoleCollisions();
+    // this.checkBlackHoleCollisions();
   }
 
   render() {
@@ -987,18 +987,18 @@ export class GameEngine {
     }
 
     // Clean up black holes
-    this.blackHoles.forEach(blackHole => {
-      blackHole.traverse(child => {
-        if (child.geometry) {
-          child.geometry.dispose();
-        }
-        if (child.material) {
-          child.material.dispose();
-        }
-      });
-      this.scene.remove(blackHole);
-    });
-    this.blackHoles = [];
+    // this.blackHoles.forEach(blackHole => {
+    //   blackHole.traverse(child => {
+    //     if (child.geometry) {
+    //       child.geometry.dispose();
+    //     }
+    //     if (child.material) {
+    //       child.material.dispose();
+    //     }
+    //   });
+    //   this.scene.remove(blackHole);
+    // });
+    // this.blackHoles = [];
 
     if (this.dracoLoader) {
       this.dracoLoader.dispose();
