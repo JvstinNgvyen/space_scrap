@@ -35,6 +35,12 @@ export class GameEngine {
     // this.blackHoleCollisionRadius = 1.5; // Collision radius for black holes
     // this.lastTeleportTime = 0; // Cooldown for teleportation
     // this.teleportCooldown = 1000; // Minimum time between teleports (ms)
+
+    // Dice properties
+    this.dice1 = 1;
+    this.dice2 = 1;
+    this.lastRollTotal = 2;
+    this.diceRollCallbacks = [];
   }
 
   async init() {
@@ -1199,5 +1205,44 @@ export class GameEngine {
 
   getNetworkManager() {
     return this.networkManager;
+  }
+
+  // Dice rolling methods
+  rollDice() {
+    // Roll two dice (1-6 each)
+    this.dice1 = Math.floor(Math.random() * 6) + 1;
+    this.dice2 = Math.floor(Math.random() * 6) + 1;
+    this.lastRollTotal = this.dice1 + this.dice2;
+
+    console.log(`Dice rolled: ${this.dice1} + ${this.dice2} = ${this.lastRollTotal}`);
+
+    // Notify all registered callbacks
+    this.diceRollCallbacks.forEach(callback => {
+      try {
+        callback(this.dice1, this.dice2, this.lastRollTotal);
+      } catch (error) {
+        console.error('Error in dice roll callback:', error);
+      }
+    });
+
+    return {
+      dice1: this.dice1,
+      dice2: this.dice2,
+      total: this.lastRollTotal
+    };
+  }
+
+  onDiceRoll(callback) {
+    if (typeof callback === 'function') {
+      this.diceRollCallbacks.push(callback);
+    }
+  }
+
+  getDiceValues() {
+    return {
+      dice1: this.dice1,
+      dice2: this.dice2,
+      total: this.lastRollTotal
+    };
   }
 }

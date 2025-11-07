@@ -382,6 +382,43 @@ class MultiplayerApp {
         }
       }
     });
+
+    // Setup dice rolling
+    this.setupDiceRolling();
+  }
+
+  setupDiceRolling() {
+    const rollButton = document.getElementById('roll-dice-btn');
+    const die1Element = document.getElementById('die1');
+    const die2Element = document.getElementById('die2');
+    const totalElement = document.getElementById('dice-total');
+
+    if (rollButton && this.gameEngine) {
+      rollButton.addEventListener('click', () => {
+        // Add rolling animation
+        die1Element.classList.add('rolling');
+        die2Element.classList.add('rolling');
+
+        // Roll the dice after a short delay for animation
+        setTimeout(() => {
+          const result = this.gameEngine.rollDice();
+
+          // Update UI
+          die1Element.textContent = result.dice1;
+          die2Element.textContent = result.dice2;
+          totalElement.textContent = result.total;
+
+          // Remove rolling animation
+          die1Element.classList.remove('rolling');
+          die2Element.classList.remove('rolling');
+        }, 500);
+      });
+
+      // Setup callback for dice roll events
+      this.gameEngine.onDiceRoll((dice1, dice2, total) => {
+        console.log(`Dice roll event: ${dice1} + ${dice2} = ${total}`);
+      });
+    }
   }
 
   showLeaveConfirmation() {
@@ -518,11 +555,17 @@ class MultiplayerApp {
 
   updateEndTurnButton() {
     const endTurnBtn = document.getElementById('end-turn-btn');
+    const rollDiceBtn = document.getElementById('roll-dice-btn');
     const isMyTurn = this.networkManager.isMyTurn();
 
     if (endTurnBtn) {
       // Disable if not player's turn OR if waiting for opponent
       endTurnBtn.disabled = !isMyTurn || this.players.length < 2;
+    }
+
+    if (rollDiceBtn) {
+      // Enable roll dice button only on player's turn with 2 players
+      rollDiceBtn.disabled = !isMyTurn || this.players.length < 2;
     }
   }
 
